@@ -71,6 +71,5 @@
         }
     },
     "require-dev": {
-        "doctrine/doctrine-fixtures-bundle": "^3.1"
     }
 }
