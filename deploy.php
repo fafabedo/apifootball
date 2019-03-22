@@ -1,10 +1,10 @@
 <?php
 namespace Deployer;
 
-require 'recipe/symfony.php';
+require 'recipe/symfony4.php';
 
 // Project name
-set('application', 'apifootball.tk');
+set('application', 'api.apifootball.tk');
 
 // Project repository
 set('repository', 'git@github.com:fafabedo/apifootball.git');
@@ -36,7 +36,7 @@ host('api.apifootball.tk')
     ->user('webdeploy')
     ->identityFile('~/.ssh/id_rsa')
     ->forwardAgent(true)
-    ->set('deploy_path', '~/{{application}}');    
+    ->set('deploy_path', '/var/www/{{application}}');
     
 // Tasks
 
@@ -48,7 +48,7 @@ task('deploy', [
     'deploy:release',
     'deploy:update_code',
     'deploy:shared',
-    'deploy:writable',
+//    'deploy:writable',
     'deploy:clear_paths',
     'deploy:vendors',
     'deploy:symlink',
@@ -57,10 +57,10 @@ task('deploy', [
     'success',
 ]);
 
+
 // [Optional] if deploy fails automatically unlock.
 after('deploy:failed', 'deploy:unlock');
 
 // Migrate database before symlink new release.
-
 before('deploy:symlink', 'database:migrate');
 
