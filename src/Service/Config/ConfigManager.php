@@ -52,15 +52,18 @@ class ConfigManager
 
     /**
      * @param $name
-     * @return mixed
+     * @return mixed|null
      */
-    public function getValue($name)
+    public function getValue($name): ?array
     {
-        return $this
+        $config = $this
             ->getConfigRepository()
             ->findOneBy(['name' =>$name])
-            ->getData()
         ;
+        if ($config instanceof Config) {
+            return $config->getData();
+        }
+        return null;
     }
 
     /**

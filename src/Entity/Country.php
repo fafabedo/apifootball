@@ -37,9 +37,9 @@ class Country
     private $active;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * @ORM\ManyToOne(targetEntity="App\Entity\Federation")
      */
-    private $federation_name;
+    private $federation;
 
     /**
      * @return int|null
@@ -105,20 +105,20 @@ class Country
     }
 
     /**
-     * @return string|null
+     * @return Federation|null
      */
-    public function getFederationName(): ?string
+    public function getFederation(): ?Federation
     {
-        return $this->federation_name;
+        return $this->federation;
     }
 
     /**
-     * @param string|null $federation_name
+     * @param Federation|null $federation
      * @return Country
      */
-    public function setFederationName(?string $federation_name): self
+    public function setFederation(?Federation $federation): self
     {
-        $this->federation_name = $federation_name;
+        $this->federation = $federation;
 
         return $this;
     }

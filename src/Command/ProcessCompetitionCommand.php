@@ -14,7 +14,7 @@ use Doctrine\Common\Persistence\ManagerRegistry;
 
 class ProcessCompetitionCommand extends Command
 {
-    protected static $defaultName = 'app:process-competition';
+    protected static $defaultName = 'app:crw-competition';
 
     /**
      * @var ManagerRegistry

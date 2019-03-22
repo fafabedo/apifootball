@@ -58,7 +58,7 @@ class Competition
     private $competition_type;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeason", mappedBy="competition")
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeason", mappedBy="competition", cascade={"persist", "remove"})
      */
     private $competitionSeasons;
 

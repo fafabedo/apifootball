@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use App\Traits\MetadataTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,6 +14,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class CompetitionSeason
 {
+    use MetadataTrait;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -21,12 +24,12 @@ class CompetitionSeason
     private $id;
 
     /**
-     * @ORM\Column(type="date")
+     * @ORM\Column(type="date", nullable=true)
      */
     private $start_season;
 
     /**
-     * @ORM\Column(type="date")
+     * @ORM\Column(type="date", nullable=true)
      */
     private $end_season;
 

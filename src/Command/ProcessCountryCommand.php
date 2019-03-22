@@ -2,7 +2,6 @@
 
 namespace App\Command;
 
-use App\Service\Crawler\ProcessCrawler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,10 +12,11 @@ use App\Service\Entity\Country\CountryCrawler;
 
 class ProcessCountryCommand extends Command
 {
-    protected static $defaultName = 'app:process-country';
+    protected static $defaultName = 'app:crw-country';
 
-    private $processCrawler;
-
+    /**
+     * @var CountryCrawler
+     */
     private $countryCrawler;
 
     /**
@@ -27,14 +27,6 @@ class ProcessCountryCommand extends Command
     {
         $this->countryCrawler = $countryCrawler;
         parent::__construct();
-    }
-
-    /**
-     * @return ProcessCrawler
-     */
-    public function getProcessCrawler(): ProcessCrawler
-    {
-        return $this->processCrawler;
     }
 
     /**

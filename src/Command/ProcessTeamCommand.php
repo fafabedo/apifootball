@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class ProcessTeamCommand extends Command
 {
-    protected static $defaultName = 'app:process-team';
+    protected static $defaultName = 'app:crw-team';
 
     /**
      * @var ManagerRegistry
