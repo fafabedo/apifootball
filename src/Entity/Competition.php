@@ -6,6 +6,8 @@ use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use App\Traits\MetadataTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -35,11 +37,6 @@ class Competition
     private $name;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\League", inversedBy="competitions")
-     */
-    private $league;
-
-    /**
      * @ORM\Column(type="integer")
      */
     private $league_level;
@@ -56,10 +53,28 @@ class Competition
     private $number_teams;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionType")
-     * @ORM\JoinColumn(nullable=true)
+     * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionType", inversedBy="competitions")
      */
     private $competition_type;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeason", mappedBy="competition")
+     */
+    private $competitionSeasons;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Federation", inversedBy="competitions")
+     */
+    private $federation;
+
+    /**
+     * Competition constructor.
+     */
+    public function __construct()
+    {
+        $this->competitionSeasons = new ArrayCollection();
+    }
+
 
     /**
      * @return int|null
@@ -102,25 +117,6 @@ class Competition
     public function setName(string $name): self
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    /**
-     * @return League|null
-     */
-    public function getLeague(): ?League
-    {
-        return $this->league;
-    }
-
-    /**
-     * @param League|null $league
-     * @return Competition
-     */
-    public function setLeague(?League $league): self
-    {
-        $this->league = $league;
 
         return $this;
     }
@@ -183,20 +179,79 @@ class Competition
     }
 
     /**
-     * @return mixed
+     * @return CompetitionType|null
      */
-    public function getCompetitionType()
+    public function getCompetitionType(): ?CompetitionType
     {
         return $this->competition_type;
     }
 
     /**
-     * @param mixed $competition_type
+     * @param CompetitionType|null $competition_type
      * @return Competition
      */
-    public function setCompetitionType($competition_type)
+    public function setCompetitionType(?CompetitionType $competition_type): self
     {
         $this->competition_type = $competition_type;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|CompetitionSeason[]
+     */
+    public function getCompetitionSeasons(): Collection
+    {
+        return $this->competitionSeasons;
+    }
+
+    /**
+     * @param CompetitionSeason $competitionSeason
+     * @return Competition
+     */
+    public function addCompetitionSeason(CompetitionSeason $competitionSeason): self
+    {
+        if (!$this->competitionSeasons->contains($competitionSeason)) {
+            $this->competitionSeasons[] = $competitionSeason;
+            $competitionSeason->setCompetition($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param CompetitionSeason $competitionSeason
+     * @return Competition
+     */
+    public function removeCompetitionSeason(CompetitionSeason $competitionSeason): self
+    {
+        if ($this->competitionSeasons->contains($competitionSeason)) {
+            $this->competitionSeasons->removeElement($competitionSeason);
+            // set the owning side to null (unless already changed)
+            if ($competitionSeason->getCompetition() === $this) {
+                $competitionSeason->setCompetition(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Federation|null
+     */
+    public function getFederation(): ?Federation
+    {
+        return $this->federation;
+    }
+
+    /**
+     * @param Federation|null $federation
+     * @return Competition
+     */
+    public function setFederation(?Federation $federation): self
+    {
+        $this->federation = $federation;
+
         return $this;
     }
 

@@ -9,9 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ApiResource()
- * @ORM\Entity(repositoryClass="App\Repository\LeagueRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\FederationRepository")
  */
-class League
+class Federation
 {
     /**
      * @ORM\Id()
@@ -21,55 +21,35 @@ class League
     private $id;
 
     /**
-     * @ORM\Column(type="text")
+     * @ORM\Column(type="string", length=100)
      */
     private $name;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Country")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\Column(type="string", length=50, nullable=true)
      */
-    private $country;
-
+    private $shortname;
 
     /**
-     * @ORM\Column(type="text")
-     */
-    private $logo;
-
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Competition", mappedBy="league")
+     * @ORM\OneToMany(targetEntity="App\Entity\Competition", mappedBy="federation")
      */
     private $competitions;
 
-    /**
-     * League constructor.
-     */
     public function __construct()
     {
         $this->competitions = new ArrayCollection();
     }
 
-    /**
-     * @return int|null
-     */
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * @return string|null
-     */
     public function getName(): ?string
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     * @return League
-     */
     public function setName(string $name): self
     {
         $this->name = $name;
@@ -77,38 +57,15 @@ class League
         return $this;
     }
 
-    /**
-     * @return Country|null
-     */
-    public function getCountry(): ?Country
+    public function getShortname(): ?string
     {
-        return $this->country;
+        return $this->shortname;
     }
 
-    /**
-     * @param mixed $country
-     */
-    public function setCountry($country): void
+    public function setShortname(?string $shortname): self
     {
-        $this->country = $country;
-    }
+        $this->shortname = $shortname;
 
-
-    /**
-     * @return mixed
-     */
-    public function getLogo()
-    {
-        return $this->logo;
-    }
-
-    /**
-     * @param mixed $logo
-     * @return League
-     */
-    public function setLogo($logo)
-    {
-        $this->logo = $logo;
         return $this;
     }
 
@@ -124,7 +81,7 @@ class League
     {
         if (!$this->competitions->contains($competition)) {
             $this->competitions[] = $competition;
-            $competition->setLeague($this);
+            $competition->setFederation($this);
         }
 
         return $this;
@@ -135,13 +92,11 @@ class League
         if ($this->competitions->contains($competition)) {
             $this->competitions->removeElement($competition);
             // set the owning side to null (unless already changed)
-            if ($competition->getLeague() === $this) {
-                $competition->setLeague(null);
+            if ($competition->getFederation() === $this) {
+                $competition->setFederation(null);
             }
         }
 
         return $this;
     }
-
-
 }

@@ -6,6 +6,8 @@ use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use App\Traits\MetadataTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -50,6 +52,22 @@ class Team
      * @ORM\JoinColumn(nullable=true)
      */
     private $country;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonFixtureTeam", mappedBy="team")
+     */
+    private $competitionSeasonFixtureTeams;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTeam", mappedBy="team")
+     */
+    private $competitionSeasonTeams;
+
+    public function __construct()
+    {
+        $this->competitionSeasonFixtureTeams = new ArrayCollection();
+        $this->competitionSeasonTeams = new ArrayCollection();
+    }
 
     /**
      * @return int|null
@@ -148,6 +166,68 @@ class Team
     public function setCountry(Country $country)
     {
         $this->country = $country;
+        return $this;
+    }
+
+    /**
+     * @return Collection|CompetitionSeasonFixtureTeam[]
+     */
+    public function getCompetitionSeasonFixtureTeams(): Collection
+    {
+        return $this->competitionSeasonFixtureTeams;
+    }
+
+    public function addCompetitionSeasonFixtureTeam(CompetitionSeasonFixtureTeam $competitionSeasonFixtureTeam): self
+    {
+        if (!$this->competitionSeasonFixtureTeams->contains($competitionSeasonFixtureTeam)) {
+            $this->competitionSeasonFixtureTeams[] = $competitionSeasonFixtureTeam;
+            $competitionSeasonFixtureTeam->setTeam($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCompetitionSeasonFixtureTeam(CompetitionSeasonFixtureTeam $competitionSeasonFixtureTeam): self
+    {
+        if ($this->competitionSeasonFixtureTeams->contains($competitionSeasonFixtureTeam)) {
+            $this->competitionSeasonFixtureTeams->removeElement($competitionSeasonFixtureTeam);
+            // set the owning side to null (unless already changed)
+            if ($competitionSeasonFixtureTeam->getTeam() === $this) {
+                $competitionSeasonFixtureTeam->setTeam(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|CompetitionSeasonTeam[]
+     */
+    public function getCompetitionSeasonTeams(): Collection
+    {
+        return $this->competitionSeasonTeams;
+    }
+
+    public function addCompetitionSeasonTeam(CompetitionSeasonTeam $competitionSeasonTeam): self
+    {
+        if (!$this->competitionSeasonTeams->contains($competitionSeasonTeam)) {
+            $this->competitionSeasonTeams[] = $competitionSeasonTeam;
+            $competitionSeasonTeam->setTeam($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCompetitionSeasonTeam(CompetitionSeasonTeam $competitionSeasonTeam): self
+    {
+        if ($this->competitionSeasonTeams->contains($competitionSeasonTeam)) {
+            $this->competitionSeasonTeams->removeElement($competitionSeasonTeam);
+            // set the owning side to null (unless already changed)
+            if ($competitionSeasonTeam->getTeam() === $this) {
+                $competitionSeasonTeam->setTeam(null);
+            }
+        }
+
         return $this;
     }
 

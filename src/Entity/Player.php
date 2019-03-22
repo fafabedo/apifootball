@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use App\Traits\MetadataTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -15,10 +16,12 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class Player
 {
+    use MetadataTrait;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="integer", name="id")
      */
     private $id;
 
@@ -28,10 +31,10 @@ class Player
     private $name;
 
     /**
-     * @ORM\Column(type="text", nullable=true)
+     * @ORM\Column(name="shortname", type="string", length=50, nullable=true)
      * @Assert\NotBlank()
      */
-    private $nickname;
+    private $shortname;
 
     /**
      * @ORM\Column(type="guid")
@@ -39,6 +42,8 @@ class Player
     private $uuid;
 
     /**
+     * @var \DateTime|null
+     *
      * @ORM\Column(type="date", nullable=true)
      */
     private $birthday;
@@ -54,16 +59,6 @@ class Player
     private $height;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\PlayerTeam", mappedBy="player", orphanRemoval=true)
-     */
-    private $playerTeams;
-
-    /**
-     * @ORM\Column(type="text", nullable=true)
-     */
-    private $url;
-
-    /**
      * @ORM\Column(type="string", length=50, nullable=true)
      */
     private $code;
@@ -74,11 +69,52 @@ class Player
     private $picture;
 
     /**
+     * @var string|null
+     *
+     * @ORM\Column(name="foot", type="string", length=15, nullable=true)
+     */
+    private $foot;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(name="outfitter", type="string", length=100, nullable=true)
+     */
+    private $outfitter;
+
+    /**
+     *
+     * @ORM\ManyToOne(targetEntity="Agent")
+     * @ORM\JoinColumns({
+     *   @ORM\JoinColumn(name="agent_id", referencedColumnName="id")
+     * })
+     */
+    private $agent;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonPlayer", mappedBy="competition_season_team")
+     */
+    private $competitionSeasonPlayers;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\PlayerPosition", mappedBy="player")
+     */
+    private $playerPositions;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\PlayerContract", mappedBy="player")
+     */
+    private $playerContracts;
+
+    /**
      * Player constructor.
      */
     public function __construct()
     {
         $this->playerTeams = new ArrayCollection();
+        $this->competitionSeasonPlayers = new ArrayCollection();
+        $this->playerPositions = new ArrayCollection();
+        $this->playerContracts = new ArrayCollection();
     }
 
     /**
@@ -109,21 +145,20 @@ class Player
     }
 
     /**
-     * @return string|null
+     * @return mixed
      */
-    public function getNickname(): ?string
+    public function getShortname()
     {
-        return $this->nickname;
+        return $this->shortname;
     }
 
     /**
-     * @param string|null $nickname
+     * @param mixed $shortname
      * @return Player
      */
-    public function setNickname(?string $nickname): self
+    public function setShortname($shortname)
     {
-        $this->nickname = $nickname;
-
+        $this->shortname = $shortname;
         return $this;
     }
 
@@ -258,38 +293,146 @@ class Player
     }
 
     /**
-     * @return Collection|PlayerTeam[]
+     * @return string|null
      */
-    public function getPlayerTeams(): Collection
+    public function getFoot(): ?string
     {
-        return $this->playerTeams;
+        return $this->foot;
     }
 
     /**
-     * @param PlayerTeam $playerTeam
+     * @param string|null $foot
      * @return Player
      */
-    public function addPlayerTeam(PlayerTeam $playerTeam): self
+    public function setFoot(?string $foot): Player
     {
-        if (!$this->playerTeams->contains($playerTeam)) {
-            $this->playerTeams[] = $playerTeam;
-            $playerTeam->setPlayer($this);
+        $this->foot = $foot;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getOutfitter(): ?string
+    {
+        return $this->outfitter;
+    }
+
+    /**
+     * @param string|null $outfitter
+     * @return Player
+     */
+    public function setOutfitter(?string $outfitter): Player
+    {
+        $this->outfitter = $outfitter;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAgent()
+    {
+        return $this->agent;
+    }
+
+    /**
+     * @param mixed $agent
+     * @return Player
+     */
+    public function setAgent($agent)
+    {
+        $this->agent = $agent;
+        return $this;
+    }
+
+    /**
+     * @return Collection|CompetitionSeasonPlayer[]
+     */
+    public function getCompetitionSeasonPlayers(): Collection
+    {
+        return $this->competitionSeasonPlayers;
+    }
+
+    public function addCompetitionSeasonPlayer(CompetitionSeasonPlayer $competitionSeasonPlayer): self
+    {
+        if (!$this->competitionSeasonPlayers->contains($competitionSeasonPlayer)) {
+            $this->competitionSeasonPlayers[] = $competitionSeasonPlayer;
+            $competitionSeasonPlayer->setCompetitionSeasonTeam($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCompetitionSeasonPlayer(CompetitionSeasonPlayer $competitionSeasonPlayer): self
+    {
+        if ($this->competitionSeasonPlayers->contains($competitionSeasonPlayer)) {
+            $this->competitionSeasonPlayers->removeElement($competitionSeasonPlayer);
+            // set the owning side to null (unless already changed)
+            if ($competitionSeasonPlayer->getCompetitionSeasonTeam() === $this) {
+                $competitionSeasonPlayer->setCompetitionSeasonTeam(null);
+            }
         }
 
         return $this;
     }
 
     /**
-     * @param PlayerTeam $playerTeam
-     * @return Player
+     * @return Collection|PlayerPosition[]
      */
-    public function removePlayerTeam(PlayerTeam $playerTeam): self
+    public function getPlayerPositions(): Collection
     {
-        if ($this->playerTeams->contains($playerTeam)) {
-            $this->playerTeams->removeElement($playerTeam);
+        return $this->playerPositions;
+    }
+
+    public function addPlayerPosition(PlayerPosition $playerPosition): self
+    {
+        if (!$this->playerPositions->contains($playerPosition)) {
+            $this->playerPositions[] = $playerPosition;
+            $playerPosition->setPlayer($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlayerPosition(PlayerPosition $playerPosition): self
+    {
+        if ($this->playerPositions->contains($playerPosition)) {
+            $this->playerPositions->removeElement($playerPosition);
             // set the owning side to null (unless already changed)
-            if ($playerTeam->getPlayer() === $this) {
-                $playerTeam->setPlayer(null);
+            if ($playerPosition->getPlayer() === $this) {
+                $playerPosition->setPlayer(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|PlayerContract[]
+     */
+    public function getPlayerContracts(): Collection
+    {
+        return $this->playerContracts;
+    }
+
+    public function addPlayerContract(PlayerContract $playerContract): self
+    {
+        if (!$this->playerContracts->contains($playerContract)) {
+            $this->playerContracts[] = $playerContract;
+            $playerContract->setPlayer($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlayerContract(PlayerContract $playerContract): self
+    {
+        if ($this->playerContracts->contains($playerContract)) {
+            $this->playerContracts->removeElement($playerContract);
+            // set the owning side to null (unless already changed)
+            if ($playerContract->getPlayer() === $this) {
+                $playerContract->setPlayer(null);
             }
         }
 
