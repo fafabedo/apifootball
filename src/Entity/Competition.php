@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ApiResource()
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionRepository")
- * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "partial"})
+ * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "partial", "team_type.id": "exact"})
  */
 class Competition
 {
@@ -37,25 +37,20 @@ class Competition
     private $name;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="integer", nullable=true)
      */
     private $league_level;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Country")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      */
     private $country;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="integer", nullable=true)
      */
     private $number_teams;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionType", inversedBy="competitions")
-     */
-    private $competition_type;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeason", mappedBy="competition", cascade={"persist", "remove"})
@@ -66,6 +61,31 @@ class Competition
      * @ORM\ManyToOne(targetEntity="App\Entity\Federation", inversedBy="competitions")
      */
     private $federation;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\TeamType")
+     */
+    private $team_type;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $image;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $slug;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionType")
+     */
+    private $competition_type;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $is_youth_competition;
 
     /**
      * Competition constructor.
@@ -179,25 +199,6 @@ class Competition
     }
 
     /**
-     * @return CompetitionType|null
-     */
-    public function getCompetitionType(): ?CompetitionType
-    {
-        return $this->competition_type;
-    }
-
-    /**
-     * @param CompetitionType|null $competition_type
-     * @return Competition
-     */
-    public function setCompetitionType(?CompetitionType $competition_type): self
-    {
-        $this->competition_type = $competition_type;
-
-        return $this;
-    }
-
-    /**
      * @return Collection|CompetitionSeason[]
      */
     public function getCompetitionSeasons(): Collection
@@ -251,6 +252,66 @@ class Competition
     public function setFederation(?Federation $federation): self
     {
         $this->federation = $federation;
+
+        return $this;
+    }
+
+    public function getTeamType(): ?TeamType
+    {
+        return $this->team_type;
+    }
+
+    public function setTeamType(?TeamType $team_type): self
+    {
+        $this->team_type = $team_type;
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): self
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): self
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
+    public function getCompetitionType(): ?CompetitionType
+    {
+        return $this->competition_type;
+    }
+
+    public function setCompetitionType(?CompetitionType $competition_type): self
+    {
+        $this->competition_type = $competition_type;
+
+        return $this;
+    }
+
+    public function getIsYouthCompetition(): ?bool
+    {
+        return $this->is_youth_competition;
+    }
+
+    public function setIsYouthCompetition(?bool $is_youth_competition): self
+    {
+        $this->is_youth_competition = $is_youth_competition;
 
         return $this;
     }

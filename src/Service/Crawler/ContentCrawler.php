@@ -3,12 +3,16 @@
 
 namespace App\Service\Crawler;
 
+use App\Entity\Config;
 use App\Service\Config\ConfigManager;
+use App\Service\Metadata\MetadataSchemaResources;
+use App\Service\Request\RequestService;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Console\Output\OutputInterface;
 use GuzzleHttp\Client;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class ContentCrawler
@@ -43,6 +47,18 @@ abstract class ContentCrawler implements CrawlerInterface
     private $configManager;
 
     /**
+     * @var RequestService
+     */
+    private $requestService;
+
+    /**
+     * @var string
+     */
+    private $rootFolder;
+
+    private $metadataSchema;
+
+    /**
      * @var OutputInterface
      */
     private $output;
@@ -56,12 +72,21 @@ abstract class ContentCrawler implements CrawlerInterface
      * ContentCrawler constructor.
      * @param ManagerRegistry $doctrine
      * @param ConfigManager $configManager
+     * @param RequestService $requestService
+     * @param KernelInterface $kernel
+     * @param MetadataSchemaResources $metadataSchema
      */
     public function __construct(ManagerRegistry $doctrine,
-        ConfigManager $configManager)
+        ConfigManager $configManager,
+        RequestService $requestService,
+        KernelInterface $kernel,
+        MetadataSchemaResources $metadataSchema)
     {
         $this->doctrine = $doctrine;
         $this->configManager = $configManager;
+        $this->requestService = $requestService;
+        $this->metadataSchema = $metadataSchema;
+        $this->rootFolder = $kernel->getProjectDir();
         $this->crawler = new Crawler();
     }
 
@@ -77,6 +102,23 @@ abstract class ContentCrawler implements CrawlerInterface
     public function getConfigManager(): ConfigManager
     {
         return $this->configManager;
+    }
+
+    /**
+     * @return RequestService
+     */
+    public function getRequestService(): RequestService
+    {
+        return $this->requestService;
+    }
+
+    /**
+     * @return MetadataSchemaResources
+     * @throws \App\Exception\InvalidMetadataSchema
+     */
+    public function getMetadataSchema(): MetadataSchemaResources
+    {
+        return MetadataSchemaResources::createSchema();
     }
 
     /**
@@ -113,6 +155,14 @@ abstract class ContentCrawler implements CrawlerInterface
     {
         $this->progressBar = $progressBar;
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRootFolder(): string
+    {
+        return $this->rootFolder;
     }
 
     /**
@@ -196,9 +246,9 @@ abstract class ContentCrawler implements CrawlerInterface
      */
     public function executeThenGetContent($method = 'GET', $params = []): ?string
     {
-        $client = new Client();
-        $res = $client->request($method, $this->getPath(), $params);
-        $content = $res->getBody()->getContents();
+        $content = $this
+            ->getRequestService()
+            ->getContent($this->getPath(), $method, $params);
         $this->setContent($content);
 
         return $this->getContent();
@@ -232,6 +282,23 @@ abstract class ContentCrawler implements CrawlerInterface
             $path = preg_replace($pattern, $value, $path);
         }
         return $path;
+    }
+
+
+    /**
+     * @param $name
+     * @return MetadataSchemaResources|null
+     * @throws \App\Exception\InvalidMetadataSchema
+     */
+    public function getConfigSchema($name): ?MetadataSchemaResources
+    {
+        $config = $this
+            ->getConfigManager()
+            ->getValue($name);
+        if (!is_array($config)) {
+            return null;
+        }
+        return MetadataSchemaResources::createSchema($config);
     }
 
     /**

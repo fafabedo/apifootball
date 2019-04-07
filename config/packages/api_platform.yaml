@@ -1,4 +1,8 @@
 api_platform:
+    title: 'Restful API Football'
+    version: '1.0.0'
+    show_webby: false
+    enable_fos_user: false
     mapping:
         paths: ['%kernel.project_dir%/src/Entity']
     collection:
@@ -6,3 +10,11 @@ api_platform:
             page_parameter_name: _page
             client_enabled: true
             enabled_parameter_name: pagination # optional
+    oauth:
+        enabled: true
+        clientId: ''
+        clientSecret: ''
+        type: 'oauth2'
+        flow: 'application'
+        tokenUrl: '/oauth/v2/token'
+        authorizationUrl: '/oauth/v2/auth'

@@ -9,11 +9,14 @@ use App\Traits\MetadataTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *     normalizationContext={"groups"={"team"}}
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\TeamRepository")
- * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "word_start", "competition.id": "exact"})
+ * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "word_start", "competition.id": "exact", "team_type.id": "exact"})
  */
 class Team
 {
@@ -28,6 +31,7 @@ class Team
 
     /**
      * @ORM\Column(type="text")
+     * @Groups("competition_season")
      */
     private $name;
 
@@ -54,23 +58,42 @@ class Team
     private $country;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonFixtureTeam", mappedBy="team")
-     */
-    private $competitionSeasonFixtureTeams;
-
-    /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTeam", mappedBy="team")
      */
     private $competitionSeasonTeams;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\TeamType")
+     */
+    private $team_type;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $is_youth_team;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $image;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $slug;
+
+    /**
+     * Team constructor.
+     */
     public function __construct()
     {
-        $this->competitionSeasonFixtureTeams = new ArrayCollection();
+        $this->competitionSeasonMatchTeams = new ArrayCollection();
         $this->competitionSeasonTeams = new ArrayCollection();
     }
 
     /**
      * @return int|null
+     * @Groups({"team", "fixture", "season"})
      */
     public function getId(): ?int
     {
@@ -79,6 +102,7 @@ class Team
 
     /**
      * @return string|null
+     * @Groups({"team", "season"})
      */
     public function getName(): ?string
     {
@@ -98,6 +122,7 @@ class Team
 
     /**
      * @return string|null
+     * @Groups({"team", "season"})
      */
     public function getShortname(): ?string
     {
@@ -135,6 +160,7 @@ class Team
 
     /**
      * @return mixed
+     * @Groups({"team", "season"})
      */
     public function getCode()
     {
@@ -153,6 +179,7 @@ class Team
 
     /**
      * @return Country
+     * @Groups({"team", "season"})
      */
     public function getCountry(): ?Country
     {
@@ -170,37 +197,6 @@ class Team
     }
 
     /**
-     * @return Collection|CompetitionSeasonFixtureTeam[]
-     */
-    public function getCompetitionSeasonFixtureTeams(): Collection
-    {
-        return $this->competitionSeasonFixtureTeams;
-    }
-
-    public function addCompetitionSeasonFixtureTeam(CompetitionSeasonFixtureTeam $competitionSeasonFixtureTeam): self
-    {
-        if (!$this->competitionSeasonFixtureTeams->contains($competitionSeasonFixtureTeam)) {
-            $this->competitionSeasonFixtureTeams[] = $competitionSeasonFixtureTeam;
-            $competitionSeasonFixtureTeam->setTeam($this);
-        }
-
-        return $this;
-    }
-
-    public function removeCompetitionSeasonFixtureTeam(CompetitionSeasonFixtureTeam $competitionSeasonFixtureTeam): self
-    {
-        if ($this->competitionSeasonFixtureTeams->contains($competitionSeasonFixtureTeam)) {
-            $this->competitionSeasonFixtureTeams->removeElement($competitionSeasonFixtureTeam);
-            // set the owning side to null (unless already changed)
-            if ($competitionSeasonFixtureTeam->getTeam() === $this) {
-                $competitionSeasonFixtureTeam->setTeam(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
      * @return Collection|CompetitionSeasonTeam[]
      */
     public function getCompetitionSeasonTeams(): Collection
@@ -208,6 +204,10 @@ class Team
         return $this->competitionSeasonTeams;
     }
 
+    /**
+     * @param CompetitionSeasonTeam $competitionSeasonTeam
+     * @return Team
+     */
     public function addCompetitionSeasonTeam(CompetitionSeasonTeam $competitionSeasonTeam): self
     {
         if (!$this->competitionSeasonTeams->contains($competitionSeasonTeam)) {
@@ -218,6 +218,10 @@ class Team
         return $this;
     }
 
+    /**
+     * @param CompetitionSeasonTeam $competitionSeasonTeam
+     * @return Team
+     */
     public function removeCompetitionSeasonTeam(CompetitionSeasonTeam $competitionSeasonTeam): self
     {
         if ($this->competitionSeasonTeams->contains($competitionSeasonTeam)) {
@@ -227,6 +231,86 @@ class Team
                 $competitionSeasonTeam->setTeam(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return TeamType|null
+     * @Groups({"team", "season"})
+     */
+    public function getTeamType(): ?TeamType
+    {
+        return $this->team_type;
+    }
+
+    /**
+     * @param TeamType|null $team_type
+     * @return Team
+     */
+    public function setTeamType(?TeamType $team_type): self
+    {
+        $this->team_type = $team_type;
+
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     * @Groups({"team"})
+     */
+    public function getIsYouthTeam(): ?bool
+    {
+        return $this->is_youth_team;
+    }
+
+    /**
+     * @param bool|null $is_youth_team
+     * @return Team
+     */
+    public function setIsYouthTeam(?bool $is_youth_team): self
+    {
+        $this->is_youth_team = $is_youth_team;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     * @Groups({"team"})
+     */
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    /**
+     * @param string|null $image
+     * @return Team
+     */
+    public function setImage(?string $image): self
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     * @Groups({"team"})
+     */
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    /**
+     * @param string|null $slug
+     * @return Team
+     */
+    public function setSlug(?string $slug): self
+    {
+        $this->slug = $slug;
 
         return $this;
     }

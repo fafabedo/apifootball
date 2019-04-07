@@ -5,15 +5,22 @@ namespace App\Entity;
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
+use App\Traits\MetadataTrait;
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation as Serializer;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *     normalizationContext={"groups"={"country"}}
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\CountryRepository")
  * @ApiFilter(SearchFilter::class, properties={"id": "exact", "name": "partial", "code": "partial"})
  */
 class Country
 {
+    use MetadataTrait;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -42,7 +49,18 @@ class Country
     private $federation;
 
     /**
+     * @ORM\Column(type="string", length=100, nullable=true)
+     */
+    private $tmk_code;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $image;
+
+    /**
      * @return int|null
+     * @Groups({"team", "country"})
      */
     public function getId(): ?int
     {
@@ -51,6 +69,7 @@ class Country
 
     /**
      * @return string|null
+     * @Groups({"team", "country"})
      */
     public function getName(): ?string
     {
@@ -70,6 +89,7 @@ class Country
 
     /**
      * @return mixed
+     * @Groups({"team", "country"})
      */
     public function getActive()
     {
@@ -88,6 +108,7 @@ class Country
 
     /**
      * @return mixed
+     * @Groups({"team", "country"})
      */
     public function getCode()
     {
@@ -106,6 +127,7 @@ class Country
 
     /**
      * @return Federation|null
+     * @Groups({"team", "country"})
      */
     public function getFederation(): ?Federation
     {
@@ -119,6 +141,45 @@ class Country
     public function setFederation(?Federation $federation): self
     {
         $this->federation = $federation;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getTmkCode(): ?string
+    {
+        return $this->tmk_code;
+    }
+
+    /**
+     * @param string|null $tmk_code
+     * @return Country
+     */
+    public function setTmkCode(?string $tmk_code): self
+    {
+        $this->tmk_code = $tmk_code;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     * @Groups({"country"})
+     */
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    /**
+     * @param string|null $image
+     * @return Country
+     */
+    public function setImage(?string $image): self
+    {
+        $this->image = $image;
 
         return $this;
     }

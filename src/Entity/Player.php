@@ -92,11 +92,6 @@ class Player
     private $agent;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonPlayer", mappedBy="competition_season_team")
-     */
-    private $competitionSeasonPlayers;
-
-    /**
      * @ORM\OneToMany(targetEntity="App\Entity\PlayerPosition", mappedBy="player")
      */
     private $playerPositions;
@@ -111,8 +106,6 @@ class Player
      */
     public function __construct()
     {
-        $this->playerTeams = new ArrayCollection();
-        $this->competitionSeasonPlayers = new ArrayCollection();
         $this->playerPositions = new ArrayCollection();
         $this->playerContracts = new ArrayCollection();
     }
@@ -343,37 +336,6 @@ class Player
     public function setAgent($agent)
     {
         $this->agent = $agent;
-        return $this;
-    }
-
-    /**
-     * @return Collection|CompetitionSeasonPlayer[]
-     */
-    public function getCompetitionSeasonPlayers(): Collection
-    {
-        return $this->competitionSeasonPlayers;
-    }
-
-    public function addCompetitionSeasonPlayer(CompetitionSeasonPlayer $competitionSeasonPlayer): self
-    {
-        if (!$this->competitionSeasonPlayers->contains($competitionSeasonPlayer)) {
-            $this->competitionSeasonPlayers[] = $competitionSeasonPlayer;
-            $competitionSeasonPlayer->setCompetitionSeasonTeam($this);
-        }
-
-        return $this;
-    }
-
-    public function removeCompetitionSeasonPlayer(CompetitionSeasonPlayer $competitionSeasonPlayer): self
-    {
-        if ($this->competitionSeasonPlayers->contains($competitionSeasonPlayer)) {
-            $this->competitionSeasonPlayers->removeElement($competitionSeasonPlayer);
-            // set the owning side to null (unless already changed)
-            if ($competitionSeasonPlayer->getCompetitionSeasonTeam() === $this) {
-                $competitionSeasonPlayer->setCompetitionSeasonTeam(null);
-            }
-        }
-
         return $this;
     }
 

@@ -55,16 +55,26 @@ class PlayerContract
      */
     private $joined_to_team_at;
 
+    /**
+     * @return int|null
+     */
     public function getId(): ?int
     {
         return $this->id;
     }
 
+    /**
+     * @return Player|null
+     */
     public function getPlayer(): ?Player
     {
         return $this->player;
     }
 
+    /**
+     * @param Player|null $player
+     * @return PlayerContract
+     */
     public function setPlayer(?Player $player): self
     {
         $this->player = $player;
@@ -72,11 +82,18 @@ class PlayerContract
         return $this;
     }
 
+    /**
+     * @return Team|null
+     */
     public function getTeam(): ?Team
     {
         return $this->team;
     }
 
+    /**
+     * @param Team|null $team
+     * @return PlayerContract
+     */
     public function setTeam(?Team $team): self
     {
         $this->team = $team;
@@ -84,11 +101,18 @@ class PlayerContract
         return $this;
     }
 
+    /**
+     * @return \DateTimeInterface|null
+     */
     public function getStartAt(): ?\DateTimeInterface
     {
         return $this->start_at;
     }
 
+    /**
+     * @param \DateTimeInterface|null $start_at
+     * @return PlayerContract
+     */
     public function setStartAt(?\DateTimeInterface $start_at): self
     {
         $this->start_at = $start_at;
@@ -96,11 +120,18 @@ class PlayerContract
         return $this;
     }
 
+    /**
+     * @return \DateTimeInterface|null
+     */
     public function getEndAt(): ?\DateTimeInterface
     {
         return $this->end_at;
     }
 
+    /**
+     * @param \DateTimeInterface|null $end_at
+     * @return PlayerContract
+     */
     public function setEndAt(?\DateTimeInterface $end_at): self
     {
         $this->end_at = $end_at;
@@ -108,11 +139,18 @@ class PlayerContract
         return $this;
     }
 
+    /**
+     * @return bool|null
+     */
     public function getArchive(): ?bool
     {
         return $this->archive;
     }
 
+    /**
+     * @param bool|null $archive
+     * @return PlayerContract
+     */
     public function setArchive(?bool $archive): self
     {
         $this->archive = $archive;
@@ -120,11 +158,18 @@ class PlayerContract
         return $this;
     }
 
+    /**
+     * @return mixed
+     */
     public function getAnnualSalary()
     {
         return $this->annual_salary;
     }
 
+    /**
+     * @param $annual_salary
+     * @return PlayerContract
+     */
     public function setAnnualSalary($annual_salary): self
     {
         $this->annual_salary = $annual_salary;
@@ -132,11 +177,18 @@ class PlayerContract
         return $this;
     }
 
+    /**
+     * @return \DateTimeInterface|null
+     */
     public function getJoinedToTeamAt(): ?\DateTimeInterface
     {
         return $this->joined_to_team_at;
     }
 
+    /**
+     * @param \DateTimeInterface|null $joined_to_team_at
+     * @return PlayerContract
+     */
     public function setJoinedToTeamAt(?\DateTimeInterface $joined_to_team_at): self
     {
         $this->joined_to_team_at = $joined_to_team_at;

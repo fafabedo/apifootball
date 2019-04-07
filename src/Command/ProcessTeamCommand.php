@@ -3,8 +3,7 @@
 namespace App\Command;
 
 use App\Entity\Country;
-use App\Service\Crawler\ProcessCrawler;
-use App\Service\Entity\Team\TeamCrawler;
+use App\Service\Crawler\Entity\Team\TeamCrawler;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -15,7 +14,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class ProcessTeamCommand extends Command
 {
-    protected static $defaultName = 'app:crw-team';
+    protected static $defaultName = 'ft-app:crw:team';
 
     /**
      * @var ManagerRegistry
@@ -58,7 +57,7 @@ class ProcessTeamCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Add a short description for your command')
+            ->setDescription('Crawl all teams in all competitions')
             ->addOption('country', null, InputOption::VALUE_OPTIONAL, 'Select country to process')
             ->addOption('level', null, InputOption::VALUE_OPTIONAL, 'Select country to process')
         ;

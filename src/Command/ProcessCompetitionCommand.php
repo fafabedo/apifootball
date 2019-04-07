@@ -3,7 +3,7 @@
 namespace App\Command;
 
 use App\Entity\Country;
-use App\Service\Entity\Competition\CompetitionCrawler;
+use App\Service\Crawler\Entity\Competition\CompetitionCrawler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,7 +14,7 @@ use Doctrine\Common\Persistence\ManagerRegistry;
 
 class ProcessCompetitionCommand extends Command
 {
-    protected static $defaultName = 'app:crw-competition';
+    protected static $defaultName = 'ft-app:crw:competition';
 
     /**
      * @var ManagerRegistry
@@ -57,7 +57,7 @@ class ProcessCompetitionCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Add a short description for your command')
+            ->setDescription('Crawl club competitions by country')
             ->addOption('country', null, InputOption::VALUE_OPTIONAL, 'Country ID to update competitions');
     }
 

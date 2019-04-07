@@ -1,0 +1,240 @@
+<?php
+
+namespace App\Entity;
+
+use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+
+/**
+ * @ApiResource(
+ *     normalizationContext={"groups"={"fixture"}}
+ * )
+ * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonMatchRepository")
+ * @ApiFilter(SearchFilter::class, properties={"competition_season.id": "exact"})
+ */
+class CompetitionSeasonMatch
+{
+    /**
+     * @ORM\Id()
+     * @ORM\GeneratedValue()
+     * @ORM\Column(type="integer")
+     * @Groups({"fixture"})
+     */
+    private $id;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeason", inversedBy="competitionSeasonMatches")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $competition_season;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $match_datetime;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $match_day;
+
+    /**
+     * @ORM\Column(type="string", length=100, nullable=true)
+     */
+    private $tmk_code;
+
+    /**
+     * @ORM\Column(type="array", nullable=true)
+     */
+    private $metadata = [];
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $attendance;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonMatchTeam", mappedBy="competition_season_match", orphanRemoval=true, cascade={"persist", "remove"})
+     * @Groups({"fixture"})
+     */
+    private $competitionSeasonMatchTeams;
+
+    /**
+     * CompetitionSeasonMatch constructor.
+     */
+    public function __construct()
+    {
+        $this->competitionSeasonMatchTeams = new ArrayCollection();
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return CompetitionSeason|null
+     * @Groups({"fixture"})
+     */
+    public function getCompetitionSeason(): ?CompetitionSeason
+    {
+        return $this->competition_season;
+    }
+
+    /**
+     * @param CompetitionSeason|null $competition_season
+     * @return CompetitionSeasonMatch
+     */
+    public function setCompetitionSeason(?CompetitionSeason $competition_season): self
+    {
+        $this->competition_season = $competition_season;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTimeInterface|null
+     * @Groups({"fixture"})
+     */
+    public function getMatchDatetime(): ?\DateTimeInterface
+    {
+        return $this->match_datetime;
+    }
+
+    /**
+     * @param \DateTimeInterface|null $match_datetime
+     * @return CompetitionSeasonMatch
+     */
+    public function setMatchDatetime(?\DateTimeInterface $match_datetime): self
+    {
+        $this->match_datetime = $match_datetime;
+
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     * @Groups({"fixture"})
+     */
+    public function getMatchDay(): ?int
+    {
+        return $this->match_day;
+    }
+
+    /**
+     * @param int|null $match_day
+     * @return CompetitionSeasonMatch
+     */
+    public function setMatchDay(?int $match_day): self
+    {
+        $this->match_day = $match_day;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     * @Groups({"fixture"})
+     */
+    public function getTmkCode(): ?string
+    {
+        return $this->tmk_code;
+    }
+
+    /**
+     * @param string|null $tmk_code
+     * @return CompetitionSeasonMatch
+     */
+    public function setTmkCode(?string $tmk_code): self
+    {
+        $this->tmk_code = $tmk_code;
+
+        return $this;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getMetadata(): ?array
+    {
+        return $this->metadata;
+    }
+
+    /**
+     * @param array|null $metadata
+     * @return CompetitionSeasonMatch
+     */
+    public function setMetadata(?array $metadata): self
+    {
+        $this->metadata = $metadata;
+
+        return $this;
+    }
+
+    /**
+     * @return int|null
+     * @Groups({"fixture"})
+     */
+    public function getAttendance(): ?int
+    {
+        return $this->attendance;
+    }
+
+    /**
+     * @param int|null $attendance
+     * @return CompetitionSeasonMatch
+     */
+    public function setAttendance(?int $attendance): self
+    {
+        $this->attendance = $attendance;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|CompetitionSeasonMatchTeam[]
+     */
+    public function getCompetitionSeasonMatchTeams(): Collection
+    {
+        return $this->competitionSeasonMatchTeams;
+    }
+
+    /**
+     * @param CompetitionSeasonMatchTeam $competitionSeasonMatchTeam
+     * @return CompetitionSeasonMatch
+     */
+    public function addCompetitionSeasonMatchTeam(CompetitionSeasonMatchTeam $competitionSeasonMatchTeam): self
+    {
+        if (!$this->competitionSeasonMatchTeams->contains($competitionSeasonMatchTeam)) {
+            $this->competitionSeasonMatchTeams[] = $competitionSeasonMatchTeam;
+            $competitionSeasonMatchTeam->setCompetitionSeasonMatch($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param CompetitionSeasonMatchTeam $competitionSeasonMatchTeam
+     * @return CompetitionSeasonMatch
+     */
+    public function removeCompetitionSeasonMatchTeam(CompetitionSeasonMatchTeam $competitionSeasonMatchTeam): self
+    {
+        if ($this->competitionSeasonMatchTeams->contains($competitionSeasonMatchTeam)) {
+            $this->competitionSeasonMatchTeams->removeElement($competitionSeasonMatchTeam);
+            // set the owning side to null (unless already changed)
+            if ($competitionSeasonMatchTeam->getCompetitionSeasonMatch() === $this) {
+                $competitionSeasonMatchTeam->setCompetitionSeasonMatch(null);
+            }
+        }
+
+        return $this;
+    }
+}

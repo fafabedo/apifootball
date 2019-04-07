@@ -19,6 +19,15 @@ class TeamRepository extends ServiceEntityRepository
         parent::__construct($registry, Team::class);
     }
 
+    /**
+     * @param $code
+     * @return Team|null
+     */
+    public function getTeamByCode($code): ?Team
+    {
+        return $this->findOneBy(['code' => $code]);
+    }
+
     // /**
     //  * @return Team[] Returns an array of Team objects
     //  */
