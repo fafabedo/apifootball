@@ -14,9 +14,39 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class CachePageRepository extends ServiceEntityRepository
 {
+    /**
+     * CachePageRepository constructor.
+     * @param RegistryInterface $registry
+     */
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, CachePage::class);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function findAllCacheExpired()
+    {
+        $entityManager = $this->getEntityManager();
+        $query = $entityManager->createQuery(
+            'SELECT c
+            FROM App\Entity\CachePage c
+            WHERE date_add(c.created, c.lifetime, \'SECOND\') < CURRENT_DATE()');
+        return $query->execute();
+    }
+
+    /**
+     * @return mixed
+     */
+    public function deleteAllCacheExpired()
+    {
+        $entityManager = $this->getEntityManager();
+        $query = $entityManager->createQuery(
+            'DELETE
+            FROM App\Entity\CachePage c
+            WHERE date_add(c.created, c.lifetime, \'SECOND\') < CURRENT_DATE()');
+        return $query->execute();
     }
 
     // /**

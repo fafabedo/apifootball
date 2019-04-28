@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Tool;
+namespace App\Tool\TransferMkt;
 
+use App\Tool\FederationTool;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
 class CompetitionAmericaTool

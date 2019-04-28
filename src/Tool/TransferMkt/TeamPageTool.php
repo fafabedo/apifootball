@@ -1,8 +1,6 @@
 <?php
 
-
-namespace App\Tool;
-
+namespace App\Tool\TransferMkt;
 
 class TeamPageTool
 {

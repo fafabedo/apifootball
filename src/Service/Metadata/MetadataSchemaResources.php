@@ -1,14 +1,12 @@
 <?php
 
-
 namespace App\Service\Metadata;
-
 
 use App\Exception\InvalidMetadataSchema;
 use App\Exception\InvalidMethodException;
 use App\Exception\InvalidURLException;
 
-class MetadataSchemaResources
+class MetadataSchemaResources implements MetadataInterface
 {
     public const RESOURCES = 'resources';
     public const URL = 'url';
@@ -43,7 +41,7 @@ class MetadataSchemaResources
      * @return MetadataSchemaResources
      * @throws InvalidMetadataSchema
      */
-    static public function createSchema($schema = []): MetadataSchemaResources
+    static public function createSchema($schema = []): MetadataInterface
     {
         return new self($schema);
     }
@@ -61,7 +59,7 @@ class MetadataSchemaResources
      * @return MetadataSchemaResources
      * @throws InvalidMetadataSchema
      */
-    public function setSchema(array $schema): MetadataSchemaResources
+    public function setSchema(array $schema): MetadataInterface
     {
         if (!$this->validateSchema($schema)) {
             throw new InvalidMetadataSchema();
@@ -73,9 +71,13 @@ class MetadataSchemaResources
     /**
      * @param string $name
      * @return string
+     * @throws InvalidMetadataSchema
      */
     public function getUrl($name = self::MAIN): string
     {
+        if (!isset($this->schema[self::RESOURCES][$name][self::URL])) {
+            throw new InvalidMetadataSchema();
+        }
         return $this->schema[self::RESOURCES][$name][self::URL];
     }
 
@@ -96,7 +98,7 @@ class MetadataSchemaResources
      * @throws InvalidMethodException
      * @throws InvalidURLException
      */
-    public function setUrl($url, $method = 'GET', $name = self::MAIN): MetadataSchemaResources
+    public function setUrl($url, $method = 'GET', $name = self::MAIN): MetadataInterface
     {
         if (!$this->validateUrl($url)) {
             throw new InvalidURLException();

@@ -83,12 +83,23 @@ class Team
     private $slug;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\TeamCoachingStaff", mappedBy="team", orphanRemoval=true)
+     */
+    private $teamCoachingStaff;
+
+    /**
+     * @ORM\Column(type="string", length=100, nullable=true)
+     */
+    private $tmk_code;
+
+    /**
      * Team constructor.
      */
     public function __construct()
     {
         $this->competitionSeasonMatchTeams = new ArrayCollection();
         $this->competitionSeasonTeams = new ArrayCollection();
+        $this->teamCoachingStaff = new ArrayCollection();
     }
 
     /**
@@ -311,6 +322,49 @@ class Team
     public function setSlug(?string $slug): self
     {
         $this->slug = $slug;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|TeamCoachingStaff[]
+     */
+    public function getTeamCoachingStaff(): Collection
+    {
+        return $this->teamCoachingStaff;
+    }
+
+    public function addTeamCoachingStaff(TeamCoachingStaff $teamCoachingStaff): self
+    {
+        if (!$this->teamCoachingStaff->contains($teamCoachingStaff)) {
+            $this->teamCoachingStaff[] = $teamCoachingStaff;
+            $teamCoachingStaff->setTeam($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTeamCoachingStaff(TeamCoachingStaff $teamCoachingStaff): self
+    {
+        if ($this->teamCoachingStaff->contains($teamCoachingStaff)) {
+            $this->teamCoachingStaff->removeElement($teamCoachingStaff);
+            // set the owning side to null (unless already changed)
+            if ($teamCoachingStaff->getTeam() === $this) {
+                $teamCoachingStaff->setTeam(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getTmkCode(): ?string
+    {
+        return $this->tmk_code;
+    }
+
+    public function setTmkCode(?string $tmk_code): self
+    {
+        $this->tmk_code = $tmk_code;
 
         return $this;
     }

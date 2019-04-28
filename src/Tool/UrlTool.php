@@ -4,6 +4,8 @@
 namespace App\Tool;
 
 
+use Symfony\Component\DomCrawler\Crawler;
+
 class UrlTool
 {
     /**
@@ -19,5 +21,17 @@ class UrlTool
             $result = $matches[1][$position];
         }
         return $result;
+    }
+
+    /**
+     * @param $htmlText
+     * @return string|null
+     */
+    static public function getHrefAttribute($htmlText): ?string
+    {
+        if (preg_match('/href="([a-zA-Z0-9\%|_|\/|-]+)"/', $htmlText, $matches)) {
+            return $matches[1];
+        }
+        return null;
     }
 }

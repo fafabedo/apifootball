@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Service\Crawler;
 
 interface CrawlerInterface

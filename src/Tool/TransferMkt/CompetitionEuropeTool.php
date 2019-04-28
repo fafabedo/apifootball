@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Tool;
+namespace App\Tool\TransferMkt;
 
+use App\Tool\HtmlTool;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -66,7 +67,6 @@ class CompetitionEuropeTool
      */
     static public function getCompetitionsByPattern(Crawler $node, $pattern): array
     {
-        $tmp = $node->html();
         $column = self::getRightColumnHtml($node);
         $rows = $column
             ->filterXPath('//div[@class="box"]')

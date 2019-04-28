@@ -58,7 +58,9 @@ class ProcessCompetitionCommand extends Command
     {
         $this
             ->setDescription('Crawl club competitions by country')
-            ->addOption('country', null, InputOption::VALUE_OPTIONAL, 'Country ID to update competitions');
+            ->addOption('country', null, InputOption::VALUE_OPTIONAL, 'Country ID to update competitions')
+            ->addOption('update_image', null, InputOption::VALUE_OPTIONAL, 'Updates images', false)
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -73,8 +75,13 @@ class ProcessCompetitionCommand extends Command
                 ->find($countryId);
         }
 
+
         $crawler = $this->getCompetitionCrawler();
 
+        if ($input->getOption('update_image')) {
+            $updateImage = $input->getOption('update_image');
+            $crawler->setUpdateImageActive($updateImage);
+        }
         if ($country instanceof Country) {
             $crawler->setCountry($country);
         }

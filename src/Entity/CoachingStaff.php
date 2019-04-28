@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -72,6 +74,16 @@ class CoachingStaff
      * @ORM\Column(type="boolean", nullable=true)
      */
     private $archive;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\TeamCoachingStaff", mappedBy="coaching_staff")
+     */
+    private $teamCoachingStaff;
+
+    public function __construct()
+    {
+        $this->teamCoachingStaff = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -206,6 +218,37 @@ class CoachingStaff
     public function setArchive(?bool $archive): self
     {
         $this->archive = $archive;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|TeamCoachingStaff[]
+     */
+    public function getTeamCoachingStaff(): Collection
+    {
+        return $this->teamCoachingStaff;
+    }
+
+    public function addTeamCoachingStaff(TeamCoachingStaff $teamCoachingStaff): self
+    {
+        if (!$this->teamCoachingStaff->contains($teamCoachingStaff)) {
+            $this->teamCoachingStaff[] = $teamCoachingStaff;
+            $teamCoachingStaff->setCoachingStaff($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTeamCoachingStaff(TeamCoachingStaff $teamCoachingStaff): self
+    {
+        if ($this->teamCoachingStaff->contains($teamCoachingStaff)) {
+            $this->teamCoachingStaff->removeElement($teamCoachingStaff);
+            // set the owning side to null (unless already changed)
+            if ($teamCoachingStaff->getCoachingStaff() === $this) {
+                $teamCoachingStaff->setCoachingStaff(null);
+            }
+        }
 
         return $this;
     }

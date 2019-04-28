@@ -8,10 +8,11 @@ use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionType;
 use App\Entity\Country;
 use App\Entity\TeamType;
+use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\CompetitionMainPageTool;
+use App\Tool\TransferMkt\CompetitionMainPageTool;
 use App\Tool\FilesystemTool;
 use App\Tool\HtmlTool;
 use App\Tool\UrlTool;
@@ -34,6 +35,11 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
      * @var array
      */
     private $codes = [];
+
+    /**
+     * @var bool
+     */
+    private $updateImageActive = false;
 
     /**
      * @var Country
@@ -63,6 +69,7 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
         return $this;
     }
 
+
     /**
      * @return string
      */
@@ -78,6 +85,24 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
     public function setCode(string $code): CompetitionCrawler
     {
         $this->code = $code;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUpdateImageActive(): bool
+    {
+        return $this->updateImageActive;
+    }
+
+    /**
+     * @param bool $updateImageActive
+     * @return CompetitionCrawler
+     */
+    public function setUpdateImageActive(bool $updateImageActive): CompetitionCrawler
+    {
+        $this->updateImageActive = $updateImageActive;
         return $this;
     }
 
@@ -117,12 +142,16 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
 
         foreach ($this->codes as $code => $country) {
             $url = $this->preparePath($competitionItemSchema->getUrl(), [$code]);
-            $this->processPath($url, $competitionItemSchema->getMethod());
+            $this
+                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                ->processPath($url, $competitionItemSchema->getMethod())
+            ;
 
             $url = HtmlTool::getCanonical($this->getCrawler());
             $slug = UrlTool::getParamFromUrl($url, 1);
             $name = CompetitionMainPageTool::getNameCompetition($this->getCrawler());
             $type = CompetitionMainPageTool::processTypeCompetition($this->getCrawler());
+            $isYouth = CompetitionMainPageTool::isYouthCompetition($this->getCrawler());
             $level = CompetitionMainPageTool::getLeagueLevel($this->getCrawler());
             $teams = CompetitionMainPageTool::getNumberTeams($this->getCrawler());
             switch ($type) {
@@ -134,17 +163,19 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
                     $imageUrl = CompetitionMainPageTool::getImageFromCompetition($this->getCrawler());
                     break;
             }
+            $filename = null;
             $destination = FilesystemTool::getDestination(
                 $this->getRootFolder(),
                 self::COMPETITION_FOLDER,
                 $code,
                 FilesystemTool::getExtension($imageUrl)
-                );
-            $filename = null;
-            if (FilesystemTool::persistFile($imageUrl, $destination) === true) {
-                $filename = FilesystemTool::getFilename(self::COMPETITION_FOLDER,
-                    $code,
-                    FilesystemTool::getExtension($imageUrl));
+            );
+            if (!file_exists($destination)) {
+                if (FilesystemTool::persistFile($imageUrl, $destination) === true) {
+                    $filename = FilesystemTool::getFilename(self::COMPETITION_FOLDER,
+                        $code,
+                        FilesystemTool::getExtension($imageUrl));
+                }
             }
 
             $teamType = $this->getDoctrine()
@@ -163,8 +194,11 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
                 $competition->setNumberTeams($teams);
                 $competition->setCompetitionType($this->getCompetitionType($type));
                 $competition->setTeamType($teamType);
+                $competition->setIsYouthCompetition($isYouth);
                 $competition->setCountry($country);
-                $competition->setImage($filename);
+                if ($filename !== null) {
+                    $competition->setImage($filename);
+                }
                 $competition->setSlug($slug);
                 $schema = MetadataSchemaResources::createSchema()
                     ->setUrl($url);
@@ -213,7 +247,7 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
             $compSeason->setStartSeason($starts);
             $compSeason->setEndSeason($ends);
             $compSeason->setArchive($archive);
-            if (isset($season['url'])) {
+            if (!empty($season['url'])) {
                 $schema = MetadataSchemaResources::createSchema()
                     ->setUrl($globalSchema->getUrl() . $season['url']);
                 $compSeason->setMetadata($schema->getSchema());
@@ -304,6 +338,7 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
                 ],
             ];
             $codes = $this
+                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
                 ->processPath($collectionSchema->getUrl(), $collectionSchema->getMethod(), $params)
                 ->setCountry($country)
                 ->getCompetitionCodes();

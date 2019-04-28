@@ -7,10 +7,11 @@ namespace App\Service\Crawler\Entity\Competition;
 use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
 use App\Entity\TeamType;
+use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\CompetitionAmericaTool;
-use App\Tool\CompetitionEuropeTool;
+use App\Tool\TransferMkt\CompetitionAmericaTool;
+use App\Tool\TransferMkt\CompetitionEuropeTool;
 use App\Tool\TypeTool;
 use App\Tool\UrlTool;
 
@@ -18,6 +19,9 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
 {
     /**
      * @return CrawlerInterface
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function process(): CrawlerInterface
@@ -50,7 +54,10 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
         if ($europeCompetitionSchema->getUrl() === null) {
             return [];
         }
-        $this->processPath($europeCompetitionSchema->getUrl());
+        $this
+            ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+            ->processPath($europeCompetitionSchema->getUrl())
+        ;
         $clubComps = CompetitionEuropeTool::getClubCompetitions($this->getCrawler());
         $clubType = TypeTool::getClubTypeTeam($this->getDoctrine());
         $competitions = $this->createCompetitions($clubComps, $clubType);
@@ -77,6 +84,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
      * @return array
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
+     * @throws \App\Exception\InvalidMetadataSchema
      */
     private function createCompetitions(array $comps, TeamType $teamType): array
     {
@@ -85,7 +93,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
             if (!isset($item['url']) || !isset($item['name'])) {
                 continue;
             }
-            $url = $this->getGlobalUrl() . $item['url'];
+            $url = $this->getGlobalUrl()->getUrl() . $item['url'];
             $code = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
             $competition = $this->getCompetitionByCodeOrSlug($code, $slug);
@@ -98,6 +106,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
             $competition->setTeamType($teamType);
             $federation = CompetitionAmericaTool::determineFederation($this->getDoctrine(), $item['name']);
             $competition->setFederation($federation);
+            $competition->setLeagueLevel(1);
             $schema = MetadataSchemaResources::createSchema()
                 ->setUrl($url);
             $competition->setMetadata($schema->getSchema());

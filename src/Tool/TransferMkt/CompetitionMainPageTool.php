@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tool;
+namespace App\Tool\TransferMkt;
 
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -115,7 +115,7 @@ class CompetitionMainPageTool
                 $href = $node
                     ->each(function (Crawler $nodeChild, $i) {
                         $filtered = $nodeChild->filter('td')->html();
-                        preg_match('/href="([a-zA-Z0-9|_|\/|-]+)"/i', $filtered, $matches);
+                        preg_match('/href="([a-zA-Z0-9|%|_|\/|-]+)"/i', $filtered, $matches);
                         if (!isset($matches[1])) {
                             return '';
                         }
@@ -162,5 +162,24 @@ class CompetitionMainPageTool
             return self::LEAGUE;
         }
         return self::TOURNAMENT;
+    }
+
+    /**
+     * @param Crawler $node
+     * @return bool
+     */
+    static public function isYouthCompetition(Crawler $node)
+    {
+        $dataNode = $node->filter('div.dataHeader')
+            ->filter('div.dataDaten');
+        if ($dataNode->count() < 1) {
+            return false;
+        }
+        $dataHtml = $dataNode->eq(0)->html();
+        if (!preg_match('/youth/i', $dataHtml)) {
+            return false;
+        }
+        return true;
+
     }
 }

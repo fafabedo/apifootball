@@ -5,11 +5,11 @@ namespace App\Service\Crawler\Entity\Competition;
 use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
 use App\Entity\TeamType;
+use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\CompetitionEuropeTool;
-use App\Tool\CompetitionMainPageTool;
+use App\Tool\TransferMkt\CompetitionEuropeTool;
 use App\Tool\FederationTool;
 use App\Tool\FilesystemTool;
 use App\Tool\TypeTool;
@@ -76,6 +76,9 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
 
     /**
      * @return CrawlerInterface
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function process(): CrawlerInterface
@@ -120,6 +123,9 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
 
     /**
      * @return array
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
      */
     private function getInternationalCompetitions(): array
     {
@@ -135,6 +141,9 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
 
     /**
      * @return array
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     private function getClubCompetitions(): array
@@ -143,7 +152,10 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
         if ($europeCompetitionsUrl === null) {
             return [];
         }
-        $this->processPath($europeCompetitionsUrl);
+        $this
+            ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+            ->processPath($europeCompetitionsUrl->getUrl())
+        ;
         $clubComps = CompetitionEuropeTool::getClubCompetitions($this->getCrawler());
         $clubType = TypeTool::getClubTypeTeam($this->getDoctrine());
         $competitions = $this->createCompetitions($clubComps, $clubType);
@@ -166,7 +178,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
             if (!isset($item['url']) || !isset($item['name'])) {
                 continue;
             }
-            $url = $this->getGlobalUrl() . $item['url'];
+            $url = $this->getGlobalUrl()->getUrl() . $item['url'];
             $code = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
             $competition = $this->getCompetitionByCodeOrSlug($code, $slug);
@@ -179,6 +191,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
             $competition->setTeamType($teamType);
             $uefaFederation = FederationTool::getUefaFederation($this->getDoctrine());
             $competition->setFederation($uefaFederation);
+            $competition->setLeagueLevel(1);
             $schema = MetadataSchemaResources::createSchema()
                 ->setUrl($url);
             $competition->setMetadata($schema->getSchema());
@@ -210,7 +223,10 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
             if ($schema->getUrl() === null) {
                 continue;
             }
-            $this->processPath($schema->getUrl());
+            $this
+                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                ->processPath($schema->getUrl())
+            ;
             $imageUrl = CompetitionEuropeTool::getImageFromCompetition($this->getCrawler());
             $teams = CompetitionEuropeTool::getParticipants($this->getCrawler());
             $destination = FilesystemTool::getDestination(
@@ -266,7 +282,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
      * @return string|null
      * @throws \App\Exception\InvalidMetadataSchema
      */
-    private function getCompetitionsEuropeUrl(): ?string
+    private function getCompetitionsEuropeUrl(): ?MetadataSchemaResources
     {
         return $this
             ->getConfigSchema('competition.europe.collection.url');
@@ -276,7 +292,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
      * @return string|null
      * @throws \App\Exception\InvalidMetadataSchema
      */
-    protected function getGlobalUrl(): ?string
+    protected function getGlobalUrl(): ?MetadataSchemaResources
     {
         return $this
             ->getConfigSchema('global.url');

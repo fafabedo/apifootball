@@ -1,15 +1,13 @@
 <?php
 
-
-namespace App\Tool;
-
+namespace App\Tool\TransferMkt;
 
 use Symfony\Component\DomCrawler\Crawler;
 
 class CountryDropDownTool
 {
     /**
-     * Get code and names from dropdown https://www.transfermarkt.co.uk/site/dropDownLaender
+     * Get code and names from dropdown /site/dropDownLaender
      * @param Crawler $node
      * @return array/null
      */

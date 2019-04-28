@@ -1,14 +1,13 @@
 <?php
 
-
-namespace App\Tool;
+namespace App\Tool\TransferMkt;
 
 use Symfony\Component\DomCrawler\Crawler;
 
 class CountryPageTool
 {
     /**
-     * Crawl national teams template https://www.transfermarkt.co.uk/wettbewerbe/national/wettbewerbe/9
+     * Crawl national teams template /wettbewerbe/national/wettbewerbe/9
      * @param Crawler $node
      * @return array
      */
@@ -34,7 +33,7 @@ class CountryPageTool
     }
 
     /**
-     * Template Country Page: https://www.transfermarkt.co.uk/argentina/startseite/verein/?1
+     * Template Country Page: /argentina/startseite/verein/?1
      * @param Crawler $node
      * @return string
      */

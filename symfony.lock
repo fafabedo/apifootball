@@ -19,6 +19,9 @@
     "beberlei/assert": {
         "version": "v3.2.0"
     },
+    "behat/transliterator": {
+        "version": "v1.2.0"
+    },
     "defuse/php-encryption": {
         "version": "v2.2.1"
     },
@@ -107,6 +110,9 @@
     "fig/link-util": {
         "version": "1.0.0"
     },
+    "friendsofsymfony/user-bundle": {
+        "version": "v2.1.2"
+    },
     "guzzlehttp/guzzle": {
         "version": "6.3.3"
     },
@@ -148,6 +154,9 @@
             "config/packages/prod/jms_serializer.yaml"
         ]
     },
+    "knplabs/doctrine-behaviors": {
+        "version": "1.6.0"
+    },
     "lcobucci/jwt": {
         "version": "3.2.5"
     },
@@ -165,6 +174,21 @@
     },
     "league/oauth2-server": {
         "version": "7.3.2"
+    },
+    "lexik/jwt-authentication-bundle": {
+        "version": "2.5",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "master",
+            "version": "2.5",
+            "ref": "509b1542f3180a1cfe248ade8b7bf5092c2d4127"
+        },
+        "files": [
+            "config/packages/lexik_jwt_authentication.yaml"
+        ]
+    },
+    "namshi/jose": {
+        "version": "7.2.3"
     },
     "nelmio/cors-bundle": {
         "version": "1.5",
@@ -308,6 +332,9 @@
             ".env"
         ]
     },
+    "symfony/form": {
+        "version": "v4.2.7"
+    },
     "symfony/framework-bundle": {
         "version": "4.2",
         "recipe": {
@@ -336,6 +363,9 @@
     "symfony/inflector": {
         "version": "v4.2.4"
     },
+    "symfony/intl": {
+        "version": "v4.2.7"
+    },
     "symfony/maker-bundle": {
         "version": "1.0",
         "recipe": {
@@ -345,8 +375,14 @@
             "ref": "fadbfe33303a76e25cb63401050439aa9b1a9c7f"
         }
     },
+    "symfony/options-resolver": {
+        "version": "v4.2.7"
+    },
     "symfony/orm-pack": {
         "version": "v1.0.6"
+    },
+    "symfony/polyfill-intl-icu": {
+        "version": "v1.11.0"
     },
     "symfony/polyfill-mbstring": {
         "version": "v1.10.0"
@@ -404,6 +440,9 @@
     },
     "symfony/stopwatch": {
         "version": "v4.2.4"
+    },
+    "symfony/templating": {
+        "version": "v4.2.7"
     },
     "symfony/translation": {
         "version": "3.3",

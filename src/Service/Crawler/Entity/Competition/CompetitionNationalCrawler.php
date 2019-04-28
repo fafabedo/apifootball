@@ -3,13 +3,15 @@
 
 namespace App\Service\Crawler\Entity\Competition;
 
+use App\Entity\Competition;
 use App\Entity\Country;
 use App\Entity\Federation;
 use App\Entity\Team;
+use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\CountryPageTool;
+use App\Tool\TransferMkt\CountryPageTool;
 use App\Tool\TypeTool;
 use App\Tool\UrlTool;
 use GuzzleHttp\Exception\GuzzleException;
@@ -36,6 +38,11 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
     private $country;
 
     /**
+     * @var Competition
+     */
+    private $competition;
+
+    /**
      * @return Country|null
      */
     public function getCountry(): ?Country
@@ -50,6 +57,24 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
     public function setCountry($country): CrawlerInterface
     {
         $this->country = $country;
+        return $this;
+    }
+
+    /**
+     * @return Competition
+     */
+    public function getCompetition(): ?Competition
+    {
+        return $this->competition;
+    }
+
+    /**
+     * @param Competition $competition
+     * @return CompetitionNationalCrawler
+     */
+    public function setCompetition(Competition $competition): CompetitionNationalCrawler
+    {
+        $this->competition = $competition;
         return $this;
     }
 
@@ -76,6 +101,8 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
      * @return CrawlerInterface
      * @throws GuzzleException
      * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
      */
     public function process(): CrawlerInterface
     {
@@ -86,7 +113,10 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
             $schema = MetadataSchemaResources::createSchema($metadata);
             if ($schema->getUrl() !== null) {
                 $url = $this->preparePath($schema->getUrl(), [$country->getCode()]);
-                $this->processPath($url, $schema->getMethod());
+                $this
+                    ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                    ->processPath($url, $schema->getMethod())
+                ;
                 $teamList = CountryPageTool::getNationalTeamLinks($this->getCrawler());
                 $teams = $this->createTeams($country, $teamList);
                 $this->teams = array_merge($this->teams, $teams);
@@ -155,24 +185,29 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
     {
         $teams = [];
         foreach ($list as $key => $teamData) {
-            $competitionUrl = $this->getBaseUrl()['url'] . $teamData['url'];
-            $code = UrlTool::getParamFromUrl($competitionUrl, 4);
-            $this->processPath($competitionUrl);
+            $teamUrl = $this->getBaseUrl()->getUrl() . $teamData['url'];
+            $tmkCode = UrlTool::getParamFromUrl($teamUrl, 4);
+            $slug = UrlTool::getParamFromUrl($teamUrl, 1);
+            $this
+                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                ->processPath($teamUrl)
+            ;
             $federationName = CountryPageTool::getFederationFromCountryPage($this->getCrawler());
             $federation = $this->manageFederation($federationName);
             $this->updateCountryFederation($country, $federation);
-            $team = $this->getTeamByCode($code);
+            $team = $this->getTeamByCode($tmkCode);
             if ($team === null) {
                 $team = new Team();
-                $team->setCode($code);
+                $team->setTmkCode($tmkCode);
             }
             $team->setCountry($country);
             $team->setName($teamData['name']);
             $team->setShortname($teamData['name']);
+            $team->setSlug($slug);
             $team->setIsYouthTeam(($key==0 ? false : true));
             $team->setTeamType(TypeTool::getNationalTypeTeam($this->getDoctrine()));
             $schema = MetadataSchemaResources::createSchema()
-                ->setUrl($teamData['url']);
+                ->setUrl($teamUrl);
             $team->setMetadata($schema->getSchema());
 
             $teams[] = $team;
@@ -209,17 +244,12 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
     }
 
     /**
-     * @return array|null
+     * @return MetadataSchemaResources
+     * @throws \App\Exception\InvalidMetadataSchema
      */
-    private function getBaseUrl(): array
+    private function getBaseUrl(): MetadataSchemaResources
     {
-        $config = $this
-            ->getConfigManager()
-            ->getValue('global.url');
-        if (empty($config)) {
-            return null;
-        }
-        return $config;
+        return $this->getConfigSchema('global.url');
     }
 
     /**

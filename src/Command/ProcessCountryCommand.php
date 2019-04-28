@@ -40,7 +40,7 @@ class ProcessCountryCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Process content from Country (transfermkt)')
+            ->setDescription('Process content from Country')
         ;
     }
 

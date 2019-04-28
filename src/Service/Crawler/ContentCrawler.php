@@ -3,7 +3,8 @@
 
 namespace App\Service\Crawler;
 
-use App\Entity\Config;
+use App\Service\Cache\CacheLifetime;
+use App\Service\Cache\CacheManager;
 use App\Service\Config\ConfigManager;
 use App\Service\Metadata\MetadataSchemaResources;
 use App\Service\Request\RequestService;
@@ -11,7 +12,8 @@ use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Console\Output\OutputInterface;
-use GuzzleHttp\Client;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
@@ -52,10 +54,23 @@ abstract class ContentCrawler implements CrawlerInterface
     private $requestService;
 
     /**
+     * @var CacheLifetime
+     */
+    private $cacheLifetime;
+
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    /**
      * @var string
      */
     private $rootFolder;
 
+    /**
+     * @var MetadataSchemaResources
+     */
     private $metadataSchema;
 
     /**
@@ -69,23 +84,34 @@ abstract class ContentCrawler implements CrawlerInterface
     private $progressBar;
 
     /**
+     * @var int
+     */
+    private $lifetime = CacheManager::DEFAULT_LIFETIME;
+
+    /**
      * ContentCrawler constructor.
      * @param ManagerRegistry $doctrine
      * @param ConfigManager $configManager
      * @param RequestService $requestService
      * @param KernelInterface $kernel
      * @param MetadataSchemaResources $metadataSchema
+     * @param CacheLifetime $cacheLifetime
+     * @param EventDispatcherInterface $eventDispatcher
      */
     public function __construct(ManagerRegistry $doctrine,
         ConfigManager $configManager,
         RequestService $requestService,
         KernelInterface $kernel,
-        MetadataSchemaResources $metadataSchema)
+        MetadataSchemaResources $metadataSchema,
+        CacheLifetime $cacheLifetime,
+        EventDispatcherInterface $eventDispatcher)
     {
         $this->doctrine = $doctrine;
         $this->configManager = $configManager;
         $this->requestService = $requestService;
         $this->metadataSchema = $metadataSchema;
+        $this->cacheLifetime = $cacheLifetime;
+        $this->eventDispatcher = $eventDispatcher;
         $this->rootFolder = $kernel->getProjectDir();
         $this->crawler = new Crawler();
     }
@@ -122,6 +148,22 @@ abstract class ContentCrawler implements CrawlerInterface
     }
 
     /**
+     * @return CacheLifetime
+     */
+    public function getCacheLifetime(): CacheLifetime
+    {
+        return $this->cacheLifetime;
+    }
+
+    /**
+     * @return EventDispatcherInterface
+     */
+    public function getEventDispatcher(): EventDispatcherInterface
+    {
+        return $this->eventDispatcher;
+    }
+
+    /**
      * @return OutputInterface|null
      */
     public function getOutput(): ?OutputInterface
@@ -145,6 +187,24 @@ abstract class ContentCrawler implements CrawlerInterface
     public function getProgressBar(): ?ProgressBar
     {
         return $this->progressBar;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLifetime(): int
+    {
+        return $this->lifetime;
+    }
+
+    /**
+     * @param int $lifetime
+     * @return ContentCrawler
+     */
+    public function setLifetime(int $lifetime): ContentCrawler
+    {
+        $this->lifetime = $lifetime;
+        return $this;
     }
 
     /**
@@ -248,6 +308,7 @@ abstract class ContentCrawler implements CrawlerInterface
     {
         $content = $this
             ->getRequestService()
+            ->setLifetime($this->getLifetime())
             ->getContent($this->getPath(), $method, $params);
         $this->setContent($content);
 
@@ -316,5 +377,30 @@ abstract class ContentCrawler implements CrawlerInterface
     abstract public function getData();
 
     abstract public function saveData(): CrawlerInterface;
+
+    /**
+     * @param $name
+     * @param $id
+     * @return MetadataSchemaResources|null
+     * @throws \App\Exception\InvalidMetadataSchema
+     */
+    protected function getSchemaResource($name, $id)
+    {
+        $overrideName = $name . '.override';
+        $overrideConfig = $this
+            ->getConfigManager()
+            ->getValue($overrideName);
+        if ($overrideConfig === null) {
+            return $this->getConfigSchema($name);
+        }
+
+        $metadata = new MetadataSchemaResources();
+        if (isset($overrideConfig[$id])) {
+            $metadata->setSchema($overrideConfig[$id]);
+        }
+
+        return $metadata;
+
+    }
 
 }

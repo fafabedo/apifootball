@@ -3,9 +3,21 @@
 
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+imports:
+    - { resource: ../vendor/knplabs/doctrine-behaviors/config/orm-services.yml }
+
 parameters:
     mailer_user: fabricio.bedoya@apifootball.tk
     locale: 'en'
+    cache_options:
+        cache_country:  '%env(resolve:CACHE_COUNTRY)%'
+        cache_competition:  '%env(resolve:CACHE_COMPETITION)%'
+        cache_competition_season:  '%env(resolve:CACHE_COMPETITION_SEASON)%'
+        cache_competition_match:  '%env(resolve:CACHE_COMPETITION_MATCH)%'
+        cache_competition_table:  '%env(resolve:CACHE_COMPETITION_TABLE)%'
+        cache_team:  '%env(resolve:CACHE_TEAM)%'
+        cache_player:  '%env(resolve:CACHE_PLAYER)%'
+        cache_coach_staff:  '%env(resolve:CACHE_COACH_STAFF)%'
 
 services:
     # default configuration for services in *this* file
@@ -25,14 +37,21 @@ services:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
 
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
-
     App\Service\:
         resource: '../src/Service/*'
         public: true
 #        arguments:
-#            $doctrine: '@doctrine'
+#          $doctrine: '@doctrine'
 
+    app.param_converter.user_converter:
+        class: App\Request\ParamConverter\UserParamConverter
+        tags:
+            - { name: request.param_converter, converter: user_converter }
 
-
+    App\Service\Cache\CacheLifetime:
+        class: App\Service\Cache\CacheLifetime
+        arguments:
+            $options: '%cache_options%'

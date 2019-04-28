@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Tool;
+namespace App\Tool\TransferMkt;
 
-use App\Entity\CompetitionSeasonMatch;
-use App\Service\Metadata\MetadataSchemaResources;
+use App\Tool\DateTimeTool;
+use App\Tool\UrlTool;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -19,6 +19,7 @@ class CompetitionFixtureTool
     static public function getFixtureTables(Crawler $node): Crawler
     {
         return $node
+            ->filterXPath('//div[@id="main"]')
             ->filter('div.large-6')
             ->filter('table');
     }
@@ -27,10 +28,10 @@ class CompetitionFixtureTool
      * @param Crawler $node
      * @return array
      */
-    static public function getTableNodes(Crawler $node)
+    static public function getLeagueTableNodes(Crawler $node)
     {
         $tableNodes = self::getFixtureTables($node);
-        $cleanTableNodes = $tableNodes->each(function (Crawler $table, $i) {
+        $cleanTableNodes = $tableNodes->each(function (Crawler $table) {
             $rows = $table
                 ->filter('tbody')
                 ->filter('tr')->each(function (Crawler $tableRow) {
@@ -103,10 +104,81 @@ class CompetitionFixtureTool
     {
         if (preg_match('/>([0-9]{1,2}):([0-9]{1,2})</', $html, $matches)) {
             if ($home) {
-                return (int) $matches[1];
+                return (int)$matches[1];
             }
-            return (int) $matches[2];
+            return (int)$matches[2];
         }
         return null;
+    }
+
+    /**
+     * @param Crawler $node
+     * @return string
+     */
+    static public function getGroupNameFromTable(Crawler $node)
+    {
+        return $node
+            ->filter('div.table-header')
+            ->text();
+    }
+
+    /**
+     * @param Crawler $node
+     * @return Crawler
+     */
+    static public function getTournamentBoxNodes(Crawler $node)
+    {
+        return $node
+            ->filterXPath('//div[@id="main"]')
+            ->filter('div.box');
+    }
+
+    /**
+     * @param Crawler $node
+     * @return string/null
+     */
+    static public function getTypeTournamentBox(Crawler $node)
+    {
+        if (preg_match('/knockout/i', $node->html())) {
+            return 'knockout';
+        }
+        if (preg_match('/group/i', $node->html())) {
+            return 'group';
+        }
+        return null;
+    }
+
+    static public function getGroupRowsMatches(Crawler $node)
+    {
+        $tableNodes = $node->filter('table')
+            ->each(function (Crawler $table, $i) {
+                if ($i === 0) {
+                    return null;
+                }
+                $rows = $table
+                    ->filter('tbody')
+                    ->filter('tr')->each(function (Crawler $tableRow) {
+                        $html = $tableRow->html();
+                        if (preg_match('/colspan="."/i', $html)) {
+                            return null;
+                        }
+                        return $tableRow;
+
+                    });
+                $realRows = [];
+                foreach ($rows as $row) {
+                    if ($row instanceof Crawler) {
+                        $realRows[] = $row;
+                    }
+                }
+                return $realRows;
+            });
+        $finalRows = [];
+        foreach ($tableNodes as $item) {
+            if ($item !== null) {
+                $finalRows = $item;
+            }
+        }
+        return $finalRows;
     }
 }

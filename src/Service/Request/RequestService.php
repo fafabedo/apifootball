@@ -5,6 +5,8 @@ namespace App\Service\Request;
 
 
 use App\Entity\CachePage;
+use App\Service\Cache\CacheLifetime;
+use App\Service\Cache\CacheManager;
 use App\Tool\HtmlTool;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use GuzzleHttp\Client;
@@ -16,25 +18,62 @@ use GuzzleHttp\Client;
 class RequestService
 {
     /**
-     * @var ManagerRegistry
+     * @var CacheManager
      */
-    private $doctrine;
+    private $cacheManager;
+
+    /**
+     * @var CacheLifetime
+     */
+    private $cacheLifetime;
 
     /**
      * RequestService constructor.
-     * @param ManagerRegistry $doctrine
+     * @param CacheManager $cacheManager
+     * @param CacheLifetime $cacheLifetime
      */
-    public function __construct(ManagerRegistry $doctrine)
-    {
-        $this->doctrine = $doctrine;
+    public function __construct(
+        CacheManager $cacheManager,
+        CacheLifetime $cacheLifetime
+    ) {
+        $this->cacheManager = $cacheManager;
+        $this->cacheLifetime = $cacheLifetime;
     }
 
     /**
-     * @return ManagerRegistry
+     * @return CacheManager
      */
-    private function getDoctrine(): ManagerRegistry
+    public function getCacheManager(): CacheManager
     {
-        return $this->doctrine;
+        return $this->cacheManager;
+    }
+
+    /**
+     * @return CacheLifetime
+     */
+    public function getCacheLifetime(): CacheLifetime
+    {
+        return $this->cacheLifetime;
+    }
+
+    public function getLifetime($name): int
+    {
+        return $this
+            ->getCacheLifetime()
+            ->getLifetime($name)
+            ;
+    }
+
+    /**
+     * @param $lifetime
+     * @return RequestService
+     */
+    public function setLifetime($lifetime): RequestService
+    {
+        $this
+            ->getCacheManager()
+            ->setLifetime($lifetime);
+        return $this;
     }
 
     /**
@@ -46,17 +85,22 @@ class RequestService
      */
     public function getContent($path, $method = 'GET', $params = []): ?string
     {
-        $cid = $this->generateCacheId($path, $method, $params);
-        $data = $this->getPageCache($cid);
+        $cid = $this
+            ->getCacheManager()
+            ->generateCacheId($path, $method, $params);
+        $data = $this
+            ->getCacheManager()
+            ->getPageCache($cid);
         if ($data !== null) {
             return $data;
         }
 
         try {
             $content = $this->request($path, $method, $params);
-            $this->setPageCache($cid, $content);
-        }
-        catch (\Exception $e) {
+            $this
+                ->getCacheManager()
+                ->setPageCache($cid, $content);
+        } catch (\Exception $e) {
             $content = '';
         }
         return $content;
@@ -76,56 +120,5 @@ class RequestService
         $content = $res->getBody()->getContents();
         return $content;
     }
-
-    /**
-     * @param $path
-     * @param $method
-     * @param $params
-     * @return string|null
-     */
-    private function generateCacheId($path, $method, $params): ?string
-    {
-        $elements = [$path, $method, $params];
-        $text = serialize($elements);
-        $cid = md5($text);
-        return $cid;
-    }
-
-    /**
-     * @param $cid
-     * @return string|null
-     */
-    private function getPageCache($cid): ?string
-    {
-        $page = $this
-            ->getDoctrine()
-            ->getRepository(CachePage::class)
-            ->findOneBy(['cacheId' => $cid]);
-
-        if (!$page instanceof CachePage) {
-            return null;
-        }
-        return $page->getData();
-    }
-
-    /**
-     * @param $cid
-     * @param $content
-     * @throws \Exception
-     */
-    private function setPageCache($cid, $content): void
-    {
-        $content = HtmlTool::trimHtml($content);
-        $cachePage = new CachePage();
-        $cachePage->setCacheId($cid);
-        $cachePage->setData($content);
-        $cachePage->setExpire(false);
-        $created = new \DateTime();
-        $cachePage->setCreated($created);
-        $em = $this->getDoctrine()->getManager();
-        $em->persist($cachePage);
-        $em->flush();
-    }
-
 
 }

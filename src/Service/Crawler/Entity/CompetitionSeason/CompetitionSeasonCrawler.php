@@ -8,11 +8,13 @@ use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionSeasonTeam;
 use App\Entity\Country;
 use App\Entity\Team;
+use App\Exception\InvalidMetadataSchema;
 use App\Exception\InvalidMethodException;
+use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\CompetitionMainPageTool;
+use App\Tool\TransferMkt\CompetitionMainPageTool;
 use App\Tool\UrlTool;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -44,6 +46,11 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
     private $archive = false;
 
     /**
+     * @var int
+     */
+    private $maxLevel = 1;
+
+    /**
      * @return Country|null
      */
     public function getCountry(): ?Country
@@ -62,9 +69,9 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
     }
 
     /**
-     * @return Competition
+     * @return Competition/null
      */
-    public function getCompetition(): Competition
+    public function getCompetition(): ?Competition
     {
         return $this->competition;
     }
@@ -98,6 +105,24 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
     }
 
     /**
+     * @return int
+     */
+    public function getMaxLevel(): int
+    {
+        return $this->maxLevel;
+    }
+
+    /**
+     * @param int $maxLevel
+     * @return CompetitionSeasonCrawler
+     */
+    public function setMaxLevel(int $maxLevel): CompetitionSeasonCrawler
+    {
+        $this->maxLevel = $maxLevel;
+        return $this;
+    }
+
+    /**
      * @return CrawlerInterface
      * @throws InvalidMethodException
      * @throws \App\Exception\InvalidMetadataSchema
@@ -110,12 +135,18 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
         $this->createProgressBar('Processing competition seasons', count($seasons));
         foreach ($seasons as $competitionSeason) {
             $metadata = $competitionSeason->getMetadata();
+            if (empty($metadata)) {
+                continue;
+            }
             try {
                 $schema = MetadataSchemaResources::createSchema($metadata);
-                $this->processPath($schema->getUrl());
+                $this
+                    ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION_SEASON))
+                    ->processPath($schema->getUrl());
                 $competitionSeason = $this->getTeams($competitionSeason);
                 $this->competitionSeasons[] = $competitionSeason;
-            } catch (InvalidMethodException $e) {
+            } catch (InvalidMetadataSchema $e) {
+                $this->getOutput()->writeln('Invalid Schema: ');
                 $this->getOutput()->writeln($competitionSeason->getId());
                 $this->getOutput()->writeln($metadata);
             }
@@ -167,13 +198,26 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
                 $filter['competition'] = $this->getCompetition();
                 break;
             case ($this->getCountry() instanceof Country):
+                $levels = [];
+                for($i=1; $i<=$this->getMaxLevel();$i++) {
+                    $levels[]=$i;
+                }
                 $competitions = $this
                     ->getDoctrine()
                     ->getRepository(Competition::class)
-                    ->findBy(['country' => $this->getCountry()]);
+                    ->findBy(['country' => $this->getCountry(), 'league_level' => $levels]);
                 $filter['competition'] = $competitions;
                 break;
             default:
+                $levels = [];
+                for($i=1; $i<=$this->getMaxLevel();$i++) {
+                    $levels[]=$i;
+                }
+                $competitions = $this
+                    ->getDoctrine()
+                    ->getRepository(Competition::class)
+                    ->findBy(['league_level' => $levels]);
+                $filter['competition'] = $competitions;
                 break;
         }
 

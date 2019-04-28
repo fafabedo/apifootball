@@ -6,6 +6,7 @@ use App\Entity\Competition;
 use App\Entity\Country;
 use App\Service\Crawler\Entity\CompetitionSeason\CompetitionSeasonCrawler;
 use App\Service\Crawler\Entity\CompetitionSeason\CompetitionSeasonMatchCrawler;
+use App\Service\Crawler\Entity\CompetitionSeason\CompetitionSeasonTableCrawler;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,18 +35,26 @@ class ProcessCompetitionSeasonCommand extends Command
     private $competitionSeasonMatchCrawler;
 
     /**
+     * @var CompetitionSeasonTableCrawler
+     */
+    private $competitionSeasonTableCrawler;
+
+    /**
      * ProcessCompetitionCommand constructor.
      * @param ManagerRegistry $doctrine
      * @param CompetitionSeasonCrawler $competitionSeasonCrawler
      * @param CompetitionSeasonMatchCrawler $competitionSeasonMatchCrawler
+     * @param CompetitionSeasonTableCrawler $competitionSeasonTableCrawler
      */
     public function __construct(ManagerRegistry $doctrine,
         CompetitionSeasonCrawler $competitionSeasonCrawler,
-        CompetitionSeasonMatchCrawler $competitionSeasonMatchCrawler)
+        CompetitionSeasonMatchCrawler $competitionSeasonMatchCrawler,
+        CompetitionSeasonTableCrawler $competitionSeasonTableCrawler)
     {
         $this->doctrine = $doctrine;
         $this->competitionSeasonCrawler = $competitionSeasonCrawler;
         $this->competitionSeasonMatchCrawler = $competitionSeasonMatchCrawler;
+        $this->competitionSeasonTableCrawler = $competitionSeasonTableCrawler;
         parent::__construct();
     }
 
@@ -74,6 +83,14 @@ class ProcessCompetitionSeasonCommand extends Command
     }
 
     /**
+     * @return CompetitionSeasonTableCrawler
+     */
+    public function getCompetitionSeasonTableCrawler(): CompetitionSeasonTableCrawler
+    {
+        return $this->competitionSeasonTableCrawler;
+    }
+
+    /**
      * Command configuration
      */
     protected function configure()
@@ -95,6 +112,7 @@ class ProcessCompetitionSeasonCommand extends Command
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Doctrine\ORM\EntityNotFoundException
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -102,6 +120,10 @@ class ProcessCompetitionSeasonCommand extends Command
 
         $this
             ->getCompetitionSeasonCrawler()
+            ->setOutput($output)
+        ;
+        $this
+            ->getCompetitionSeasonMatchCrawler()
             ->setOutput($output)
         ;
 
@@ -134,21 +156,25 @@ class ProcessCompetitionSeasonCommand extends Command
 
         $archive = $input->getOption('archive');
 
-        $io->title('Competition Seasons');
-//        $this
-//            ->getCompetitionSeasonCrawler()
-//            ->setShowArchive($archive)
-//            ->process()
-//            ->saveData()
-//        ;
+        $io->title('Competition Seasons...');
+        $this
+            ->getCompetitionSeasonCrawler()
+            ->setShowArchive($archive)
+            ->process()
+            ->saveData()
+        ;
+        $competitionSeasons = $this
+            ->getCompetitionSeasonCrawler()
+            ->getData();
         $io->newLine();
-        $io->title('Competition Fixture');
+        $io->title('Competition Fixture...');
         $this
             ->getCompetitionSeasonMatchCrawler()
+            ->setSeasons($competitionSeasons)
             ->process()
             ->saveData()
         ;
 
-        $io->success('Competition season has been processed');
+        $io->success('Competition matches have been updated successfully.');
     }
 }

@@ -36,6 +36,16 @@ class CachePage
      */
     private $expire;
 
+    /**
+     * @ORM\Column(type="string", length=100, nullable=true)
+     */
+    private $collection;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $lifetime;
+
 
     /**
      * @return int|null
@@ -116,6 +126,30 @@ class CachePage
     public function setExpire(?bool $expire): self
     {
         $this->expire = $expire;
+
+        return $this;
+    }
+
+    public function getCollection(): ?string
+    {
+        return $this->collection;
+    }
+
+    public function setCollection(?string $collection): self
+    {
+        $this->collection = $collection;
+
+        return $this;
+    }
+
+    public function getLifetime(): ?int
+    {
+        return $this->lifetime;
+    }
+
+    public function setLifetime(?int $lifetime): self
+    {
+        $this->lifetime = $lifetime;
 
         return $this;
     }

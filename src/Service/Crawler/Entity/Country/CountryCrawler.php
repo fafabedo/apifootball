@@ -4,18 +4,14 @@ namespace App\Service\Crawler\Entity\Country;
 
 use App\Entity\Country;
 use App\Entity\Federation;
+use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\CountryDropDownTool;
-use App\Tool\CountryPageTool;
+use App\Tool\TransferMkt\CountryDropDownTool;
 use App\Tool\FederationTool;
 use App\Tool\FifaSite\FifaSiteFederationTool;
-use Doctrine\Common\Persistence\ManagerRegistry;
-use App\Service\Config\ConfigManager;
-use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Class CountryCrawler
@@ -50,7 +46,9 @@ class CountryCrawler extends ContentCrawler implements CrawlerInterface
         try {
             $this->createProgressBar('Crawling countries from resource', 2);
 
-            $this->processPath($countryCollection->getUrl(), $countryCollection->getMethod());
+            $this
+                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COUNTRY))
+                ->processPath($countryCollection->getUrl(), $countryCollection->getMethod());
             $this->advanceProgressBar();
 
             $countryItem = CountryDropDownTool::getCodesAndNamesFromDropDown($this->getCrawler());
@@ -135,7 +133,9 @@ class CountryCrawler extends ContentCrawler implements CrawlerInterface
         foreach ($federations as $federation) {
             $federationName = strtolower($federation->getShortname());
             $url = $this->preparePath($countryFifaSchema->getUrl(),[$federationName]);
-            $this->processPath($url);
+            $this
+                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COUNTRY))
+                ->processPath($url);
             $federationCountries[$federation->getId()] = FifaSiteFederationTool::getFederationCountries($this->getCrawler());
         }
 

@@ -8,6 +8,7 @@ use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Knp\DoctrineBehaviors\Model as ORMBehaviors;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -19,6 +20,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
  */
 class CompetitionSeasonMatch
 {
+    use ORMBehaviors\Timestampable\Timestampable;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -63,6 +66,27 @@ class CompetitionSeasonMatch
      * @Groups({"fixture"})
      */
     private $competitionSeasonMatchTeams;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $isProcessed;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $isPlayed;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\MatchStage")
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private $MatchStage;
+
+    /**
+     * @ORM\Column(type="string", length=5, nullable=true)
+     */
+    private $MatchGroup;
 
     /**
      * CompetitionSeasonMatch constructor.
@@ -237,4 +261,84 @@ class CompetitionSeasonMatch
 
         return $this;
     }
+
+    /**
+     * @return bool|null
+     */
+    public function getIsProcessed(): ?bool
+    {
+        return $this->isProcessed;
+    }
+
+    /**
+     * @param bool $isProcessed
+     * @return CompetitionSeasonMatch
+     */
+    public function setIsProcessed(bool $isProcessed): self
+    {
+        $this->isProcessed = $isProcessed;
+
+        return $this;
+    }
+
+    /**
+     * @return bool|null
+     * @Groups({"fixture"})
+     */
+    public function getIsPlayed(): ?bool
+    {
+        return $this->isPlayed;
+    }
+
+    /**
+     * @param bool|null $isPlayed
+     * @return CompetitionSeasonMatch
+     */
+    public function setIsPlayed(?bool $isPlayed): self
+    {
+        $this->isPlayed = $isPlayed;
+
+        return $this;
+    }
+
+    /**
+     * @return MatchStage|null
+     * @Groups({"fixture"})
+     */
+    public function getMatchStage(): ?MatchStage
+    {
+        return $this->MatchStage;
+    }
+
+    /**
+     * @param MatchStage|null $MatchStage
+     * @return CompetitionSeasonMatch
+     */
+    public function setMatchStage(?MatchStage $MatchStage): self
+    {
+        $this->MatchStage = $MatchStage;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     * @Groups({"fixture"})
+     */
+    public function getMatchGroup(): ?string
+    {
+        return $this->MatchGroup;
+    }
+
+    /**
+     * @param string|null $MatchGroup
+     * @return CompetitionSeasonMatch
+     */
+    public function setMatchGroup(?string $MatchGroup): self
+    {
+        $this->MatchGroup = $MatchGroup;
+
+        return $this;
+    }
+
 }

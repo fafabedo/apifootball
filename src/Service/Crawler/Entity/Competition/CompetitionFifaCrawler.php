@@ -6,10 +6,11 @@ namespace App\Service\Crawler\Entity\Competition;
 
 use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
+use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\CompetitionEuropeTool;
+use App\Tool\TransferMkt\CompetitionEuropeTool;
 use App\Tool\FederationTool;
 use App\Tool\FilesystemTool;
 use App\Tool\TypeTool;
@@ -79,7 +80,10 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
                 $this->advanceProgressBar();
                 continue;
             }
-            $this->processPath($schema->getUrl());
+            $this
+                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                ->processPath($schema->getUrl())
+            ;
             $imageUrl = CompetitionEuropeTool::getImageFromCompetition($this->getCrawler());
             $destination = FilesystemTool::getDestination(
                 $this->getRootFolder(),
@@ -89,12 +93,14 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
             );
 
             $filename = null;
-            if (FilesystemTool::persistFile($imageUrl, $destination) === true) {
-                $filename = FilesystemTool::getFilename(self::COMPETITION_FOLDER,
-                    $competition->getCode(),
-                    FilesystemTool::getExtension($imageUrl));
+            if (!file_exists($destination)) {
+                if (FilesystemTool::persistFile($imageUrl, $destination) === true) {
+                    $filename = FilesystemTool::getFilename(self::COMPETITION_FOLDER,
+                        $competition->getCode(),
+                        FilesystemTool::getExtension($imageUrl));
+                }
+                $competition->setImage($filename);
             }
-            $competition->setImage($filename);
             $this->advanceProgressBar();
         }
         $this->finishProgressBar();
@@ -103,6 +109,9 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
 
     /**
      * @return array
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     private function getCompetitions(): array
@@ -112,7 +121,10 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
         if ($europeCompetitionsUrl === null) {
             return [];
         }
-        $this->processPath($europeCompetitionsUrl);
+        $this
+            ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+            ->processPath($europeCompetitionsUrl)
+        ;
         $this->advanceProgressBar();
         $competitions = CompetitionEuropeTool::getNationalCompetitions($this->getCrawler());
         $competitions = $this->createCompetitions($competitions);
@@ -125,6 +137,7 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
      * @return array
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
+     * @throws \App\Exception\InvalidMetadataSchema
      */
     private function createCompetitions(array $comps): array
     {
@@ -145,6 +158,7 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
             $competition->setName($item['name']);
             $teamType = TypeTool::getNationalTypeTeam($this->getDoctrine());
             $competition->setTeamType($teamType);
+            $competition->setLeagueLevel(1);
             $fifaFederation = FederationTool::getFifaFederation($this->getDoctrine());
             $competition->setFederation($fifaFederation);
             $schema = MetadataSchemaResources::createSchema()
