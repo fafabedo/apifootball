@@ -4,6 +4,7 @@
 /.env.local.php
 /.env.*.local
 /.env
+/scripts/*.sql
 /scripts/dump-sql/
 /public/bundles/
 /public/files/
