@@ -10,6 +10,7 @@
         "beberlei/assert": "^3.2",
         "doctrine/annotations": "^1.6",
         "elasticsearch/elasticsearch": "^6.0",
+        "friendsofsymfony/user-bundle": "~2.0",
         "guzzlehttp/guzzle": "^6.3",
         "jms/serializer-bundle": "^2.4",
         "knplabs/doctrine-behaviors": "~1.1",

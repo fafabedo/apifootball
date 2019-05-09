@@ -140,8 +140,8 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
             ->getConfigSchema('competition.item.url');
         $this->createProgressBar('Crawling country information', count($this->codes));
 
-        foreach ($this->codes as $code => $country) {
-            $url = $this->preparePath($competitionItemSchema->getUrl(), [$code]);
+        foreach ($this->codes as $tmkCode => $country) {
+            $url = $this->preparePath($competitionItemSchema->getUrl(), [$tmkCode]);
             $this
                 ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
                 ->processPath($url, $competitionItemSchema->getMethod())
@@ -167,13 +167,13 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
             $destination = FilesystemTool::getDestination(
                 $this->getRootFolder(),
                 self::COMPETITION_FOLDER,
-                $code,
+                $tmkCode,
                 FilesystemTool::getExtension($imageUrl)
             );
             if (!file_exists($destination)) {
                 if (FilesystemTool::persistFile($imageUrl, $destination) === true) {
                     $filename = FilesystemTool::getFilename(self::COMPETITION_FOLDER,
-                        $code,
+                        $tmkCode,
                         FilesystemTool::getExtension($imageUrl));
                 }
             }
@@ -184,10 +184,12 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
 
             if ($type === CompetitionMainPageTool::TOURNAMENT
                 || ($level < 6 && $teams > 0)) {
-                $competition = $this->findCompetitionByCode($code);
+                $competition = $this->getDoctrine()
+                    ->getRepository(Competition::class)
+                    ->findOneByTmkCode($tmkCode);
                 if (!$competition instanceof Competition) {
                     $competition = new Competition();
-                    $competition->setCode($code);
+                    $competition->setCode($tmkCode);
                 }
                 $competition->setName($name);
                 $competition->setLeagueLevel($level);
@@ -397,10 +399,10 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
      */
     private function getMergedCompetition(Competition $competition): Competition
     {
-        $code = $competition->getCode();
+        $tmkCode = $competition->getCode();
         $existent = $this->getDoctrine()
             ->getRepository(Competition::class)
-            ->findOneBy(['code' => $code]);
+            ->findOneByTmkCode($tmkCode);
 
         if ($existent instanceof Competition) {
             $existent->setLeagueLevel($competition->getLeagueLevel());
@@ -408,17 +410,6 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
             $existent->setTeamType($competition->getTeamType());
             $existent->setCountry($competition->getCountry());
             $competition = $existent;
-        }
-        return $competition;
-    }
-
-    private function findCompetitionByCode($code)
-    {
-        $competition = $this->getDoctrine()
-            ->getRepository(Competition::class)
-            ->findOneBy(['code'=>$code]);
-        if (!$competition instanceof Competition) {
-            return null;
         }
         return $competition;
     }

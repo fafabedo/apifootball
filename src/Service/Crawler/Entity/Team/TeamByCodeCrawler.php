@@ -4,6 +4,7 @@
 namespace App\Service\Crawler\Entity\Team;
 
 
+use App\Entity\Competition;
 use App\Entity\Country;
 use App\Entity\Team;
 use App\Service\Cache\CacheLifetime;
@@ -13,6 +14,7 @@ use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\CompetitionMainPageTool;
 use App\Tool\TransferMkt\Team\TeamOverviewTool;
 use App\Tool\TypeTool;
+use App\Tool\UrlTool;
 
 class TeamByCodeCrawler extends ContentCrawler
 {
@@ -66,15 +68,22 @@ class TeamByCodeCrawler extends ContentCrawler
         $team = $this
             ->getDoctrine()
             ->getRepository(Team::class)
-            ->findOneBy(['tmk_code'=> $this->getTmkCode()]);
+            ->findOneByTmkCode($this->getTmkCode());
         if (!$team instanceof Team) {
             $team = new Team();
             $team->setTmkCode($this->getTmkCode());
         }
         $name = TeamOverviewTool::getFullName($this->getCrawler());
         $competitionLink = TeamOverviewTool::getCompetitionLink($this->getCrawler());
+        $competitionTmkCode = UrlTool::getParamFromUrl($competitionLink, 3);
+        $competition = $this
+            ->getDoctrine()
+            ->getRepository(Competition::class)
+            ->findOneByTmkCode($competitionTmkCode);
 
-        $team->setCountry($this->getCompetition()->getCountry());
+        if ($competition instanceof Competition) {
+            $team->setCountry($competition->getCountry());
+        }
         $team->setName($name);
         $team->setShortname($name);
         $team->setTeamType(TypeTool::getClubTypeTeam($this->getDoctrine()));
@@ -82,21 +91,20 @@ class TeamByCodeCrawler extends ContentCrawler
         $metadataSchema = new MetadataSchemaResources();
         $metadataSchema->setUrl($url);
         $team->setMetadata($metadataSchema->getSchema());
-
         $this->team = $team;
-
         return $this;
-
     }
 
     public function getData()
     {
-        // TODO: Implement getData() method.
+        return $this->team;
     }
 
     public function saveData(): CrawlerInterface
     {
-        // TODO: Implement saveData() method.
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($this->team);
+        $em->flush();
     }
 
 }

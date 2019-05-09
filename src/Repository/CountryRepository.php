@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Country;
+use App\Traits\TmkEntityRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
@@ -14,6 +15,8 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class CountryRepository extends ServiceEntityRepository
 {
+    use TmkEntityRepositoryTrait;
+
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, Country::class);

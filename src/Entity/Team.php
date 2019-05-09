@@ -6,6 +6,7 @@ use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use App\Traits\MetadataTrait;
+use App\Traits\TmkEntityTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -21,6 +22,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Team
 {
     use MetadataTrait;
+    use TmkEntityTrait;
 
     /**
      * @ORM\Id()
@@ -86,11 +88,6 @@ class Team
      * @ORM\OneToMany(targetEntity="App\Entity\TeamCoachingStaff", mappedBy="team", orphanRemoval=true)
      */
     private $teamCoachingStaff;
-
-    /**
-     * @ORM\Column(type="string", length=100, nullable=true)
-     */
-    private $tmk_code;
 
     /**
      * Team constructor.
@@ -334,6 +331,10 @@ class Team
         return $this->teamCoachingStaff;
     }
 
+    /**
+     * @param TeamCoachingStaff $teamCoachingStaff
+     * @return Team
+     */
     public function addTeamCoachingStaff(TeamCoachingStaff $teamCoachingStaff): self
     {
         if (!$this->teamCoachingStaff->contains($teamCoachingStaff)) {
@@ -344,6 +345,10 @@ class Team
         return $this;
     }
 
+    /**
+     * @param TeamCoachingStaff $teamCoachingStaff
+     * @return Team
+     */
     public function removeTeamCoachingStaff(TeamCoachingStaff $teamCoachingStaff): self
     {
         if ($this->teamCoachingStaff->contains($teamCoachingStaff)) {
@@ -357,17 +362,6 @@ class Team
         return $this;
     }
 
-    public function getTmkCode(): ?string
-    {
-        return $this->tmk_code;
-    }
-
-    public function setTmkCode(?string $tmk_code): self
-    {
-        $this->tmk_code = $tmk_code;
-
-        return $this;
-    }
 
 
 

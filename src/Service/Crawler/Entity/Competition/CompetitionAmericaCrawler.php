@@ -69,6 +69,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
      * @return array
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
+     * @throws \App\Exception\InvalidMetadataSchema
      */
     private function getInternationalCompetitions(): array
     {
@@ -96,6 +97,9 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
             $url = $this->getGlobalUrl()->getUrl() . $item['url'];
             $code = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
+            if ($code === 'C19A') {
+                $tmp = 1;
+            }
             $competition = $this->getCompetitionByCodeOrSlug($code, $slug);
             if (!$competition instanceof Competition) {
                 $competition = new Competition();
@@ -114,6 +118,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
             // Competition Season
             $competitionSeason = new CompetitionSeason();
             $competitionSeason->setArchive(false);
+            $competitionSeason->setMetadata($schema->getSchema());
             $competition->addCompetitionSeason($competitionSeason);
 
             $competitions[] = $competition;

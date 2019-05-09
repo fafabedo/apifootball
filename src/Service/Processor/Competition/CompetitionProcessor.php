@@ -9,10 +9,11 @@ use App\Entity\CompetitionSeasonMatchTeam;
 use App\Entity\CompetitionSeasonTable;
 use App\Entity\CompetitionSeasonTableItem;
 use App\Entity\CompetitionSeasonTeam;
+use App\Entity\CompetitionType;
 use App\Entity\Team;
 use App\Service\Processor\AbstractProcessor;
-use App\Service\Processor\Order\OrderContext;
-use App\Service\Processor\Order\OrderStrategyInterface;
+use App\Service\Processor\Order\OrderProxy;
+use App\Service\Processor\Table\TableProxy;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Style\StyleInterface;
 
@@ -48,18 +49,27 @@ class CompetitionProcessor extends AbstractProcessor
     private $outputStyle;
 
     /**
-     * @var OrderContext
+     * @var OrderProxy
      */
-    private $orderContext;
+    private $orderProxy;
+
+    /**
+     * @var TableProxy
+     */
+    private $tableProxy;
 
     /**
      * TableProcessor constructor.
      * @param ManagerRegistry $doctrine
+     * @param TableProxy $tableProxy
+     * @param OrderProxy $orderProxy
      * @throws \Exception
      */
-    public function __construct(ManagerRegistry $doctrine)
+    public function __construct(ManagerRegistry $doctrine, TableProxy $tableProxy, OrderProxy $orderProxy)
     {
         $this->doctrine = $doctrine;
+        $this->tableProxy = $tableProxy;
+        $this->orderProxy = $orderProxy;
         parent::__construct($doctrine);
     }
 
@@ -126,21 +136,19 @@ class CompetitionProcessor extends AbstractProcessor
     }
 
     /**
-     * @param OrderStrategyInterface $orderStrategy
-     * @return CompetitionProcessor
+     * @return TableProxy
      */
-    public function setOrderStrategy(OrderStrategyInterface $orderStrategy): CompetitionProcessor
+    public function getTableProxy(): TableProxy
     {
-        $this->orderContext->setOrderStrategy($orderStrategy);
-        return $this;
+        return $this->tableProxy;
     }
 
     /**
-     * @return OrderStrategyInterface
+     * @return OrderProxy
      */
-    public function getOrderStrategy(): OrderStrategyInterface
+    public function getOrderProxy(): OrderProxy
     {
-        $this->orderContext;
+        return $this->orderProxy;
     }
 
     /**
@@ -151,12 +159,41 @@ class CompetitionProcessor extends AbstractProcessor
     {
         $seasons = $this->getCompetitionSeasons();
         foreach ($seasons as $competitionSeason) {
-            $matches = $this->getMatches($competitionSeason);
-            $startsAt = $this->getStartsMatchDayDateTime($matches);
-            $tables = $this->processTableFromMatches($competitionSeason, $startsAt);
-            foreach ($tables as $matchDay => $table) {
-                $this->tables[] = $table;
+            $competitionTypeId = $competitionSeason
+                ->getCompetition()
+                ->getCompetitionType()
+                ->getId();
+            switch ($competitionTypeId) {
+                case CompetitionType::TOURNAMENT:
+                    $this
+                        ->getTableProxy()
+                        ->setProcessorByClass('TableGroupsProcessor');
+                    ;
+                    break;
+                case CompetitionType::LEAGUE:
+                default:
+                    $this
+                        ->getTableProxy()
+                        ->setProcessorByClass('TableLeagueProcessor')
+                        ->setParameter('match_days', $this->getMatchDay());
+                    break;
             }
+            $tables = $this
+                ->getTableProxy()
+                ->setCompetitionSeason($competitionSeason)
+                ->process()
+                ->getData();
+
+            /* @ Order Table position */
+            $tables = $this
+                ->getOrderProxy()
+                ->setStrategyByClass('OrderPointsThenDirectMatches')
+                ->setCompetitionSeasonTables($tables)
+                ->process()
+                ->getData()
+            ;
+
+            $this->tables = array_merge($this->tables, $tables);
         }
         return $this;
     }
@@ -180,77 +217,6 @@ class CompetitionProcessor extends AbstractProcessor
         }
         $em->flush();
         return $this;
-    }
-
-
-    /**
-     * @param CompetitionSeason $season
-     * @param \DateTime[] $startsAt
-     * @return array
-     * @throws \Exception
-     */
-    private function processTableFromMatches(CompetitionSeason $season, array $startsAt): array
-    {
-        $baseTeams = $this->getDoctrine()
-            ->getRepository(CompetitionSeasonTeam::class)
-            ->findBy(['competition_season' => $season]);
-        $tables = [];
-        $today = (new \DateTime());
-        foreach ($startsAt as $matchDay => $dateTime) {
-            if (!empty($this->getMatchDay())  && !in_array($matchDay ,$this->getMatchDay())) {
-                continue;
-            }
-            if ($dateTime->getTimestamp() > $today->getTimestamp()) {
-                continue;
-            }
-            $table = $this->getTableBySeasonAndMatchDay($season, $matchDay);
-            if (!$table instanceof CompetitionSeasonTable) {
-                $table = new CompetitionSeasonTable();
-                $table->setCompetitionSeason($season);
-                $table->setMatchDay($matchDay);
-                $timestamp = $dateTime->getTimestamp() - (60 * 60 * 24);
-                $dateTimeTable = (new \DateTime())->setTimestamp($timestamp);
-                $table->setTimestamp($dateTimeTable);
-            }
-
-            $matches = $this
-                ->getDoctrine()
-                ->getRepository(CompetitionSeasonMatch::class)
-                ->findMatchesByMathDay($season, $matchDay, $startsAt[$matchDay + 1]);
-            foreach ($table->getCompetitionSeasonTableItems() as $tableItem) {
-                $table->removeCompetitionSeasonTableItem($tableItem);
-            }
-
-            /* @var CompetitionSeasonMatch $match */
-            foreach ($matches as $match) {
-                foreach ([true, false] as $isHome) {
-                    $matchTeam = $match->getCompetitionSeasonMatchTeams()->filter(function (
-                        CompetitionSeasonMatchTeam $matchTeam
-                    ) use ($isHome) {
-                        return ($matchTeam->getIsHome() === $isHome);
-                    })->first();
-                    if (!$matchTeam instanceof CompetitionSeasonMatchTeam) {
-                        continue;
-                    }
-                    $team = $matchTeam->getTeam();
-                    $tableItem = $table
-                        ->getCompetitionSeasonTableItems()
-                        ->filter(function (CompetitionSeasonTableItem $tableItem) use ($team) {
-                            return ($tableItem->getTeam() === $team);
-                        })->first();
-
-                    if (!$tableItem instanceof CompetitionSeasonTableItem) {
-                        $tableItem = $this->createNewTableItem($table, $team);
-                    }
-                    $tableItem = $this->processTableItemFromMatch($tableItem, $match, $isHome);
-                    $table->addCompetitionSeasonTableItem($tableItem);
-                }
-
-            }
-            $table = $this->orderTableWithBaseTeams($table, $baseTeams);
-            $tables[$matchDay] = $table;
-        }
-        return $tables;
     }
 
     /**
@@ -410,33 +376,6 @@ class CompetitionProcessor extends AbstractProcessor
             }
         }
         return $startsAt;
-    }
-
-    /**
-     * @param CompetitionSeason $competitionSeason
-     * @param $matchDay
-     * @return CompetitionSeasonTable|null
-     */
-    private function getTableBySeasonAndMatchDay(
-        CompetitionSeason $competitionSeason,
-        $matchDay
-    ): ?CompetitionSeasonTable {
-        return $this
-            ->getDoctrine()
-            ->getRepository(CompetitionSeasonTable::class)
-            ->findOneBy(['competition_season' => $competitionSeason, 'match_day' => $matchDay]);
-    }
-
-    /**
-     * @param CompetitionSeason $competitionSeason
-     * @return array
-     */
-    private function getMatches(CompetitionSeason $competitionSeason): array
-    {
-        return $this
-            ->getDoctrine()
-            ->getRepository(CompetitionSeasonMatch::class)
-            ->findBy(['competition_season' => $competitionSeason]);
     }
 
     /**

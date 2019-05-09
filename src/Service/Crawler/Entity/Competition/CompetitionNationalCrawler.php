@@ -195,7 +195,9 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
             $federationName = CountryPageTool::getFederationFromCountryPage($this->getCrawler());
             $federation = $this->manageFederation($federationName);
             $this->updateCountryFederation($country, $federation);
-            $team = $this->getTeamByCode($tmkCode);
+            $team = $this->getDoctrine()
+                ->getRepository(Team::class)
+                ->findOneByTmkCode($tmkCode);
             if ($team === null) {
                 $team = new Team();
                 $team->setTmkCode($tmkCode);
@@ -213,18 +215,6 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
             $teams[] = $team;
         }
         return $teams;
-    }
-
-    private function getTeamByCode($code): ?Team
-    {
-        $team = $this
-            ->getDoctrine()
-            ->getRepository(Team::class)
-            ->findOneBy(['code' => $code]);
-        if ($team instanceof Team) {
-            return $team;
-        }
-        return null;
     }
 
     /**

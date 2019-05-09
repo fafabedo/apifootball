@@ -97,9 +97,9 @@ class ProcessCompetitionSeasonCommand extends Command
     {
         $this
             ->setDescription('Crawl competition seasons, teams and fixture')
-            ->addOption('mode', null, InputOption::VALUE_OPTIONAL, 'Crawl all competition season with fixture and stats', true)
-            ->addOption('country', null, InputOption::VALUE_OPTIONAL, 'Filter by country')
-            ->addOption('competition', null, InputOption::VALUE_OPTIONAL, 'Filter by competition')
+            ->addOption('force', null, InputOption::VALUE_OPTIONAL, 'Force match updates', false)
+            ->addOption('country', null, InputOption::VALUE_REQUIRED, 'Filter by country')
+            ->addOption('competition', null, InputOption::VALUE_REQUIRED, 'Filter by competition')
             ->addOption('archive', null, InputOption::VALUE_OPTIONAL, 'Include past season', false)
         ;
     }
@@ -154,7 +154,8 @@ class ProcessCompetitionSeasonCommand extends Command
 
         }
 
-        $archive = $input->getOption('archive');
+        $archive = $input->hasOption('archive');
+        $force = $input->hasOption('force');
 
         $io->title('Competition Seasons...');
         $this
@@ -171,10 +172,11 @@ class ProcessCompetitionSeasonCommand extends Command
         $this
             ->getCompetitionSeasonMatchCrawler()
             ->setSeasons($competitionSeasons)
+            ->setForceUpdate($force)
             ->process()
             ->saveData()
         ;
-
+        $io->newLine();
         $io->success('Competition matches have been updated successfully.');
     }
 }

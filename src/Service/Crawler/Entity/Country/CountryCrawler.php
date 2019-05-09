@@ -181,29 +181,15 @@ class CountryCrawler extends ContentCrawler implements CrawlerInterface
      */
     private function createCountry($tmkCode, $name, array $metadata = [])
     {
-        $country = $this->findCountryByTmkCode($tmkCode);
+        $country = $this->getDoctrine()
+            ->getRepository(Country::class)
+            ->findOneByTmkCode($tmkCode);
         if (!$country instanceof Country) {
             $country = new Country();
             $country->setTmkCode($tmkCode);
         }
         $country->setName($name);
         $country->setMetadata($metadata);
-        return $country;
-    }
-
-    /**
-     * @param $code
-     * @return Country|null
-     */
-    private function findCountryByTmkCode($code): ?Country
-    {
-        $country = $this
-            ->getDoctrine()
-            ->getRepository(Country::class)
-            ->findOneBy(['tmk_code' => $code]);
-        if (!$country instanceof Country) {
-            return null;
-        }
         return $country;
     }
 

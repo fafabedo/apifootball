@@ -15,7 +15,7 @@ use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
  *     normalizationContext={"groups"={"table"}}
  * )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonTableRepository")
- * @ApiFilter(SearchFilter::class, properties={"id": "exact", "competition_season.id": "exact"})
+ * @ApiFilter(SearchFilter::class, properties={"id": "exact", "competition_season.id": "exact", "match_day": "exact"})
  */
 class CompetitionSeasonTable
 {
@@ -31,7 +31,7 @@ class CompetitionSeasonTable
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeason")
      * @ORM\JoinColumn(nullable=false)
      */
-    private $competition_season;
+    private $competitionSeason;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
@@ -52,6 +52,11 @@ class CompetitionSeasonTable
      * @ORM\Column(type="boolean", nullable=true)
      */
     private $isProcessed;
+
+    /**
+     * @ORM\Column(type="string", length=20, nullable=true)
+     */
+    private $groupName;
 
     /**
      * CompetitionSeasonTable constructor.
@@ -76,16 +81,16 @@ class CompetitionSeasonTable
      */
     public function getCompetitionSeason(): ?CompetitionSeason
     {
-        return $this->competition_season;
+        return $this->competitionSeason;
     }
 
     /**
-     * @param CompetitionSeason|null $competition_season
+     * @param CompetitionSeason|null $competitionSeason
      * @return CompetitionSeasonTable
      */
-    public function setCompetitionSeason(?CompetitionSeason $competition_season): self
+    public function setCompetitionSeason(?CompetitionSeason $competitionSeason): self
     {
-        $this->competition_season = $competition_season;
+        $this->competitionSeason = $competitionSeason;
 
         return $this;
     }
@@ -186,6 +191,26 @@ class CompetitionSeasonTable
     public function setIsProcessed(?bool $isProcessed): self
     {
         $this->isProcessed = $isProcessed;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     * @Groups({"table"})
+     */
+    public function getGroupName(): ?string
+    {
+        return $this->groupName;
+    }
+
+    /**
+     * @param string|null $groupName
+     * @return CompetitionSeasonTable
+     */
+    public function setGroupName(?string $groupName): self
+    {
+        $this->groupName = $groupName;
 
         return $this;
     }

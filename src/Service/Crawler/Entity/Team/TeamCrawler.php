@@ -188,7 +188,7 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
             $team = $this
                 ->getDoctrine()
                 ->getRepository(Team::class)
-                ->findOneBy(['tmk_code'=> $tmkCode]);
+                ->findOneByTmkCode($tmkCode);
             if (!$team instanceof Team) {
                 $team = new Team();
                 $team->setTmkCode($tmkCode);
@@ -251,7 +251,7 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
                     $team = $this
                         ->getDoctrine()
                         ->getRepository(Team::class)
-                        ->getTeamByCode($tmkCode);
+                        ->findOneByTmkCode($tmkCode);
                 }
                 if (!$team instanceof Team) {
                     $team = new Team();

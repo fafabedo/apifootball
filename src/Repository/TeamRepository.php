@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Team;
+use App\Traits\TmkEntityRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
@@ -14,6 +15,8 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
  */
 class TeamRepository extends ServiceEntityRepository
 {
+    use TmkEntityRepositoryTrait;
+
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, Team::class);
@@ -23,10 +26,10 @@ class TeamRepository extends ServiceEntityRepository
      * @param $code
      * @return Team|null
      */
-    public function getTeamByCode($code): ?Team
-    {
-        return $this->findOneBy(['code' => $code]);
-    }
+//    public function getTeamByCode($code): ?Team
+//    {
+//        return $this->findOneBy(['code' => $code]);
+//    }
 
     // /**
     //  * @return Team[] Returns an array of Team objects

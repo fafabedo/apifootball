@@ -5,6 +5,7 @@ namespace App\Entity;
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
+use App\Traits\TmkEntityTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -21,6 +22,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class CompetitionSeasonMatch
 {
     use ORMBehaviors\Timestampable\Timestampable;
+    use TmkEntityTrait;
 
     /**
      * @ORM\Id()
@@ -45,11 +47,6 @@ class CompetitionSeasonMatch
      * @ORM\Column(type="integer", nullable=true)
      */
     private $match_day;
-
-    /**
-     * @ORM\Column(type="string", length=100, nullable=true)
-     */
-    private $tmk_code;
 
     /**
      * @ORM\Column(type="array", nullable=true)
@@ -84,7 +81,7 @@ class CompetitionSeasonMatch
     private $MatchStage;
 
     /**
-     * @ORM\Column(type="string", length=5, nullable=true)
+     * @ORM\Column(type="string", length=20, nullable=true)
      */
     private $MatchGroup;
 
@@ -160,26 +157,6 @@ class CompetitionSeasonMatch
     public function setMatchDay(?int $match_day): self
     {
         $this->match_day = $match_day;
-
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     * @Groups({"fixture"})
-     */
-    public function getTmkCode(): ?string
-    {
-        return $this->tmk_code;
-    }
-
-    /**
-     * @param string|null $tmk_code
-     * @return CompetitionSeasonMatch
-     */
-    public function setTmkCode(?string $tmk_code): self
-    {
-        $this->tmk_code = $tmk_code;
 
         return $this;
     }

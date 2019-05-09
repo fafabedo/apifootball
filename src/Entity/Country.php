@@ -6,6 +6,7 @@ use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use App\Traits\MetadataTrait;
+use App\Traits\TmkEntityTrait;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as Serializer;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -20,6 +21,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Country
 {
     use MetadataTrait;
+    use TmkEntityTrait;
 
     /**
      * @ORM\Id()
@@ -47,11 +49,6 @@ class Country
      * @ORM\ManyToOne(targetEntity="App\Entity\Federation")
      */
     private $federation;
-
-    /**
-     * @ORM\Column(type="string", length=100, nullable=true)
-     */
-    private $tmk_code;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
@@ -141,25 +138,6 @@ class Country
     public function setFederation(?Federation $federation): self
     {
         $this->federation = $federation;
-
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getTmkCode(): ?string
-    {
-        return $this->tmk_code;
-    }
-
-    /**
-     * @param string|null $tmk_code
-     * @return Country
-     */
-    public function setTmkCode(?string $tmk_code): self
-    {
-        $this->tmk_code = $tmk_code;
 
         return $this;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionSeasonTable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
@@ -17,6 +18,22 @@ class CompetitionSeasonTableRepository extends ServiceEntityRepository
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, CompetitionSeasonTable::class);
+    }
+
+    /**
+     * @param CompetitionSeason $competitionSeason
+     * @param $matchDay
+     * @return CompetitionSeasonTable|null
+     */
+    public function findOneTableBySeasonAndMatchDay(CompetitionSeason $competitionSeason, $matchDay)
+    {
+        return $this
+            ->findOneBy(
+                [
+                    'competition_season' => $competitionSeason,
+                    'match_day' => $matchDay
+                ]
+            );
     }
 
     // /**

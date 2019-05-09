@@ -15,6 +15,7 @@ use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\CompetitionMainPageTool;
+use App\Tool\TransferMkt\CompetitionTournamentOverviewTool;
 use App\Tool\UrlTool;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -131,7 +132,9 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
      */
     public function process(): CrawlerInterface
     {
-        $seasons = $this->getCompetitionSeasons();
+        $seasons = $this->getDoctrine()
+            ->getRepository(CompetitionSeason::class)
+            ->findByCompetition($this->getCompetition());
         $this->createProgressBar('Processing competition seasons', count($seasons));
         foreach ($seasons as $competitionSeason) {
             $metadata = $competitionSeason->getMetadata();
@@ -143,7 +146,19 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
                 $this
                     ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION_SEASON))
                     ->processPath($schema->getUrl());
-                $competitionSeason = $this->getTeams($competitionSeason);
+                $competitionType = $competitionSeason
+                    ->getCompetition()
+                    ->getCompetitionType()
+                    ->getId();
+                switch ($competitionType) {
+                    case 1:
+                        $competitionSeason = $this->getTeamsTournament($competitionSeason);
+                        break;
+                    case 2:
+                    default:
+                        $competitionSeason = $this->getTeamsLeague($competitionSeason);
+                        break;
+                }
                 $this->competitionSeasons[] = $competitionSeason;
             } catch (InvalidMetadataSchema $e) {
                 $this->getOutput()->writeln('Invalid Schema: ');
@@ -178,6 +193,9 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
             ->getManager();
         $this->createProgressBar('Saving competition seasons', count($this->competitionSeasons));
         foreach ($this->competitionSeasons as $competitionSeason) {
+            if (!$competitionSeason instanceof CompetitionSeason) {
+                continue;
+            }
             $competitionSeason = $em->merge($competitionSeason);
             $em->persist($competitionSeason);
             $this->advanceProgressBar();
@@ -234,31 +252,76 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidURLException
      */
-    private function getTeams(CompetitionSeason $competitionSeason): ?CompetitionSeason
+    private function getTeamsLeague(CompetitionSeason $competitionSeason): ?CompetitionSeason
     {
         $teamTable = $this
             ->getCrawler()
             ->filterXPath('//div[@id="yw1"]//table//tbody//tr');
         if ($teamTable->count() == 0) {
-            return null;
+            return $competitionSeason;
         }
-        $codes = $this->getIDFromTDHtml($teamTable);
+        $tmkCodes = $this->getIDFromTDHtml($teamTable);
         $teams = $this->getDoctrine()
             ->getRepository(Team::class)
-            ->findBy(['code' => $codes]);
-
+            ->findByTmkCode($tmkCodes);
 
         $teams = $this->createTeamFromHtml($teams, $competitionSeason->getCompetition()->getCountry());
         $this->saveTeams($teams);
         $teams = $this->getDoctrine()
             ->getRepository(Team::class)
-            ->findBy(['code' => $codes]);
+            ->findByTmkCode($tmkCodes);
         foreach ($teams as $team) {
-            $result = $team->getCompetitionSeasonTeams()->filter(function (CompetitionSeasonTeam $competitionSeasonTeam
-            ) use ($team) {
-                return ($competitionSeasonTeam->getTeam()->getId() == $team->getId());
-            })->first();
+            $result = $competitionSeason->getCompetitionSeasonTeams()->filter(
+                function (CompetitionSeasonTeam $competitionSeasonTeam) use ($team) {
+                    return ($competitionSeasonTeam->getTeam()->getId() == $team->getId());
+                })->first();
             if ($result === false) {
+                $competitionSeasonTeam = new CompetitionSeasonTeam();
+                $competitionSeasonTeam->setCompetitionSeason($competitionSeason);
+                $competitionSeasonTeam->setTeam($team);
+                $competitionSeason->addCompetitionSeasonTeam($competitionSeasonTeam);
+            }
+        }
+        return $competitionSeason;
+    }
+
+    /**
+     * @param CompetitionSeason $competitionSeason
+     * @return CompetitionSeason|null
+     * @throws InvalidMetadataSchema
+     * @throws InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
+     */
+    private function getTeamsTournament(CompetitionSeason $competitionSeason): ?CompetitionSeason
+    {
+        $teamSpans = $this
+            ->getCrawler()
+            ->filter('span.vereinsname');
+        if ($teamSpans->count() === 0) {
+            return $competitionSeason;
+        }
+        $tmkCodes = [];
+        foreach ($teamSpans as $span) {
+            $node = new Crawler();
+            $node->addNode($span);
+            $htmlSpan = $node->html();
+            $tmkCodes[] = CompetitionTournamentOverviewTool::getSpanTeamTmkCode($htmlSpan);
+        }
+        $teams = $this->getDoctrine()
+            ->getRepository(Team::class)
+            ->findByTmkCode($tmkCodes);
+
+        $teams = $this->createTeamFromHtml($teams);
+        $this->saveTeams($teams);
+        $teams = $this->getDoctrine()
+            ->getRepository(Team::class)
+            ->findByTmkCode($tmkCodes);
+        foreach ($teams as $team) {
+            $result = $competitionSeason->getCompetitionSeasonTeams()->filter(
+                function (CompetitionSeasonTeam $competitionSeasonTeam) use ($team) {
+                    return ($competitionSeasonTeam->getTeam()->getId() == $team->getId());
+                })->first();
+            if (!$result instanceof CompetitionSeasonTeam) {
                 $competitionSeasonTeam = new CompetitionSeasonTeam();
                 $competitionSeasonTeam->setCompetitionSeason($competitionSeason);
                 $competitionSeasonTeam->setTeam($team);
@@ -289,31 +352,35 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
     }
 
     /**
-     * @param array $existentTeams
+     * @param Team[] $existentTeams
      * @param Country $country
      * @return array
      * @throws InvalidMethodException
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidURLException
      */
-    private function createTeamFromHtml(array $existentTeams, Country $country)
+    private function createTeamFromHtml($existentTeams, Country $country = null)
     {
         $baseUrl = $this->getConfigSchema('global.url');
         $teams = CompetitionMainPageTool::getTeamsFromPage($this->getCrawler());
         $newTeams = [];
         foreach ($teams as $teamInfo) {
             $url = $baseUrl->getUrl() . $teamInfo['url'];
-            $code = UrlTool::getParamFromUrl($url, 4);
+            $tmkCode = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
-            $team = $this->findTeamByCodeOrSlug($code, $slug);
+            $team = $this->getDoctrine()
+                ->getRepository(Team::class)
+                ->findOneByTmkCode($tmkCode);
             if (!$team instanceof Team){
                 $team = new Team();
-                $team->setCode($code);
+                $team->setCode($tmkCode);
             }
             $team->setShortname($teamInfo['shortname']);
             $team->setName($teamInfo['name']);
             $team->setSlug($slug);
-            $team->setCountry($country);
+            if ($country instanceof Country) {
+                $team->setCountry($country);
+            }
             $schema = MetadataSchemaResources::createSchema();
             $schema->setUrl($url);
             $team->setMetadata($schema->getSchema());
@@ -325,12 +392,12 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
 
     /**
      * @param Team[] $teams
-     * @return CrawlerInterface
+     * @return CompetitionSeasonCrawler
      */
-    private function saveTeams($teams): self
+    private function saveTeams($teams): CompetitionSeasonCrawler
     {
+        $em = $this->getDoctrine()->getManager();
         foreach ($teams as $team) {
-            $em = $this->getDoctrine()->getManager();
             $team = $em->merge($team);
             $em->persist($team);
         }
@@ -338,28 +405,5 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
         return $this;
     }
 
-    /**
-     * @param $code
-     * @param $slug
-     * @return Team|object|null
-     */
-    private function findTeamByCodeOrSlug($code, $slug)
-    {
-        $team = $this
-            ->getDoctrine()
-            ->getRepository(Team::class)
-            ->findOneBy(['code' => $code, 'slug' => $slug]);
-        if ($team instanceof Team) {
-            return $team;
-        }
-        $team = $this
-            ->getDoctrine()
-            ->getRepository(Team::class)
-            ->findOneBy(['code' => $code]);
-        if ($team instanceof Team) {
-            return $team;
-        }
-        return null;
-    }
 
 }

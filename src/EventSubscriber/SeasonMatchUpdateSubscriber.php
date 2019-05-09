@@ -2,6 +2,8 @@
 
 namespace App\EventSubscriber;
 
+use App\Entity\Competition;
+use App\Entity\CompetitionType;
 use App\Event\CompetitionSeasonMatchEvent;
 use App\Service\Processor\Competition\CompetitionProcessor;
 use App\Service\Processor\Table\TableStandardProcessor;
@@ -13,6 +15,9 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class SeasonMatchUpdateSubscriber implements EventSubscriberInterface
 {
+    const TOURNAMENT = 1;
+    const LEAGUE = 2;
+
     /**
      * @var CompetitionProcessor
      */
@@ -66,13 +71,33 @@ class SeasonMatchUpdateSubscriber implements EventSubscriberInterface
             }
         }
 
-        $this
-            ->getCompetitionProcessor()
-            ->setCompetitions($competitions)
-            ->setMatchDay($matchDays)
-            ->process()
-            ->saveData()
-        ;
+        /* @var Competition $competition*/
+        foreach ($competitions as $competition) {
+            $competitionTypeId = $competition
+                ->getCompetitionType()
+                ->getId();
+            switch ($competitionTypeId) {
+                case CompetitionType::TOURNAMENT:
+                    $this
+                        ->getCompetitionProcessor()
+                        ->setCompetitions([$competition])
+                        ->process()
+                        ->saveData()
+                    ;
+                    break;
+                default:
+                case CompetitionType::LEAGUE:
+                    $this
+                        ->getCompetitionProcessor()
+                        ->setCompetitions([$competition])
+                        ->setMatchDay($matchDays)
+                        ->process()
+                        ->saveData()
+                    ;
+                    break;
+            }
+
+        }
     }
 
 }

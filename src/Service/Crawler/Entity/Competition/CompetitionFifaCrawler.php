@@ -147,12 +147,14 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
                 continue;
             }
             $url= $this->getGlobalUrl() . $item['url'];
-            $code = UrlTool::getParamFromUrl($url, 4);
+            $tmkCode = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
-            $competition = $this->getCompetitionByCodeOrSlug($code, $slug);
+            $competition = $this->getDoctrine()
+                ->getRepository(Competition::class)
+                ->findOneByTmkCode($tmkCode);
             if (!$competition instanceof Competition) {
                 $competition = new Competition();
-                $competition->setCode($code);
+                $competition->setCode($tmkCode);
                 $competition->setSlug($slug);
             }
             $competition->setName($item['name']);
@@ -173,34 +175,6 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
             $competitions[] = $competition;
         }
         return $competitions;
-    }
-
-    /**
-     * @param $code
-     * @param $slug
-     * @return Competition|null
-     */
-    private function getCompetitionByCodeOrSlug($code, $slug): ?Competition
-    {
-        $competitionSlug = $this
-            ->getDoctrine()
-            ->getRepository(Competition::class)
-            ->findOneBy(['slug' => $slug]);
-
-        if ($competitionSlug instanceof Competition
-            && $competitionSlug->getCode() === $code) {
-            return $competitionSlug;
-        }
-
-        $competitionCode = $this
-            ->getDoctrine()
-            ->getRepository(Competition::class)
-            ->findOneBy(['code' => $code]);
-
-        if ($competitionCode instanceof Competition) {
-            return $competitionCode;
-        }
-        return null;
     }
 
     /**

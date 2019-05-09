@@ -11,6 +11,9 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class CompetitionType
 {
+    const TOURNAMENT = 1;
+    const LEAGUE = 2;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()

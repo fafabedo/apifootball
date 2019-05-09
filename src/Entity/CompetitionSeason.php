@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use App\Traits\MetadataTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -57,6 +58,7 @@ class CompetitionSeason
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTeam", mappedBy="competition_season", cascade={"persist", "remove"})
      * @Groups({"season"})
+     * @ApiSubresource()
      */
     private $competitionSeasonTeams;
 
@@ -68,8 +70,15 @@ class CompetitionSeason
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonMatch", mappedBy="competition_season", orphanRemoval=true)
+     * @ApiSubresource()
      */
     private $competitionSeasonMatches;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTable", mappedBy="competitionSeason")
+     * @ApiSubresource()
+     */
+    private $competitionSeasonTables;
 
     /**
      * CompetitionSeason constructor.
@@ -78,6 +87,7 @@ class CompetitionSeason
     {
         $this->competitionSeasonTeams = new ArrayCollection();
         $this->competitionSeasonMatches = new ArrayCollection();
+        $this->competitionSeasonTables = new ArrayCollection();
     }
 
     /**
@@ -211,6 +221,10 @@ class CompetitionSeason
         return $this->competitionSeasonMatches;
     }
 
+    /**
+     * @param CompetitionSeasonMatch $competitionSeasonMatch
+     * @return CompetitionSeason
+     */
     public function addCompetitionSeasonMatch(CompetitionSeasonMatch $competitionSeasonMatch): self
     {
         if (!$this->competitionSeasonMatches->contains($competitionSeasonMatch)) {
@@ -221,6 +235,10 @@ class CompetitionSeason
         return $this;
     }
 
+    /**
+     * @param CompetitionSeasonMatch $competitionSeasonMatch
+     * @return CompetitionSeason
+     */
     public function removeCompetitionSeasonMatch(CompetitionSeasonMatch $competitionSeasonMatch): self
     {
         if ($this->competitionSeasonMatches->contains($competitionSeasonMatch)) {
@@ -228,6 +246,45 @@ class CompetitionSeason
             // set the owning side to null (unless already changed)
             if ($competitionSeasonMatch->getCompetitionSeason() === $this) {
                 $competitionSeasonMatch->setCompetitionSeason(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|CompetitionSeasonTable[]
+     */
+    public function getCompetitionSeasonTables(): Collection
+    {
+        return $this->competitionSeasonTables;
+    }
+
+    /**
+     * @param CompetitionSeasonTable $competitionSeasonTable
+     * @return CompetitionSeason
+     */
+    public function addCompetitionSeasonTable(CompetitionSeasonTable $competitionSeasonTable): self
+    {
+        if (!$this->competitionSeasonTables->contains($competitionSeasonTable)) {
+            $this->competitionSeasonTables[] = $competitionSeasonTable;
+            $competitionSeasonTable->setCompetitionSeason($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param CompetitionSeasonTable $competitionSeasonTable
+     * @return CompetitionSeason
+     */
+    public function removeCompetitionSeasonTable(CompetitionSeasonTable $competitionSeasonTable): self
+    {
+        if ($this->competitionSeasonTables->contains($competitionSeasonTable)) {
+            $this->competitionSeasonTables->removeElement($competitionSeasonTable);
+            // set the owning side to null (unless already changed)
+            if ($competitionSeasonTable->getCompetitionSeason() === $this) {
+                $competitionSeasonTable->setCompetitionSeason(null);
             }
         }
 

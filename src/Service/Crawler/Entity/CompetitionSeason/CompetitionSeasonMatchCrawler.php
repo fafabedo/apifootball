@@ -6,17 +6,27 @@ use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionSeasonMatch;
 use App\Entity\CompetitionSeasonMatchTeam;
+use App\Entity\CompetitionSeasonTeam;
+use App\Entity\CompetitionType;
+use App\Entity\MatchStage;
 use App\Entity\Team;
 use App\Event\CompetitionSeasonMatchEvent;
 use App\Service\Cache\CacheLifetime;
+use App\Service\Config\ConfigManager;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
+use App\Service\Crawler\Entity\Team\TeamByCodeCrawler;
 use App\Service\Metadata\MetadataSchemaResources;
+use App\Service\Request\RequestService;
 use App\Tool\TransferMkt\CompetitionFixtureTool;
 use App\Tool\DateTimeTool;
+use App\Tool\TransferMkt\CompetitionGroupsMatchDayTool;
 use App\Tool\UrlTool;
+use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityNotFoundException;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class CompetitionSeasonMatchCrawler
@@ -28,11 +38,6 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      * @var CompetitionSeasonMatch[]
      */
     private $competitionMatches = [];
-
-    /**
-     * @var CompetitionSeasonMatch[]
-     */
-    private $updatedCompetitionMatches = [];
 
     /**
      * @var array
@@ -58,6 +63,45 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      * @var bool
      */
     private $forceUpdate = false;
+
+    /**
+     * @var TeamByCodeCrawler
+     */
+    private $teamByCodeCrawler;
+
+    /**
+     * CompetitionSeasonMatchCrawler constructor.
+     * @param ManagerRegistry $doctrine
+     * @param ConfigManager $configManager
+     * @param RequestService $requestService
+     * @param KernelInterface $kernel
+     * @param MetadataSchemaResources $metadataSchema
+     * @param CacheLifetime $cacheLifetime
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param TeamByCodeCrawler $teamByCodeCrawler
+     */
+    public function __construct(
+        ManagerRegistry $doctrine,
+        ConfigManager $configManager,
+        RequestService $requestService,
+        KernelInterface $kernel,
+        MetadataSchemaResources $metadataSchema,
+        CacheLifetime $cacheLifetime,
+        EventDispatcherInterface $eventDispatcher,
+        TeamByCodeCrawler $teamByCodeCrawler
+    ) {
+        $this->teamByCodeCrawler = $teamByCodeCrawler;
+        parent::__construct($doctrine, $configManager, $requestService,
+            $kernel, $metadataSchema, $cacheLifetime, $eventDispatcher);
+    }
+
+    /**
+     * @return TeamByCodeCrawler
+     */
+    public function getTeamByCodeCrawler(): TeamByCodeCrawler
+    {
+        return $this->teamByCodeCrawler;
+    }
 
     /**
      * @return Competition/null
@@ -207,6 +251,7 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
         $em = $this
             ->getDoctrine()
             ->getManager();
+
         $this->createProgressBar('Saving matches information', count($this->competitionMatches));
         foreach ($this->competitionMatches as $fixture) {
             $em->persist($fixture);
@@ -221,8 +266,7 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
         $event->setCompetitionMatches($this->competitionMatches);
         $this
             ->getEventDispatcher()
-            ->dispatch(CompetitionSeasonMatchEvent::POST_UPDATE, $event)
-        ;
+            ->dispatch(CompetitionSeasonMatchEvent::POST_UPDATE, $event);
 
         return $this;
     }
@@ -259,11 +303,14 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      * @throws \App\Exception\InvalidURLException
      * @throws EntityNotFoundException
      * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     private function processFixtureLeagueHtml(CompetitionSeason $competitionSeason)
     {
         $globalUrl = $this->getConfigSchema('global.url');
         $tablesNode = CompetitionFixtureTool::getLeagueTableNodes($this->getCrawler());
+
+        $matchStage = $this->getMatchStage(MatchStage::MATCH_STAGE_LEAGUE);
 
         $fixtureMatches = [];
         $matchDay = 1;
@@ -295,6 +342,7 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
                 $match->setCompetitionSeason($competitionSeason);
                 $match->setMatchDatetime($matchTime);
                 $match->setMatchDay($matchDay);
+                $match->setMatchStage($matchStage);
                 $schema = (MetadataSchemaResources::createSchema())->setUrl($url);
                 $match->setMetadata($schema->getSchema());
 
@@ -324,35 +372,69 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     private function processFixtureTournamentHtml(CompetitionSeason $competitionSeason)
     {
         $globalUrl = $this->getConfigSchema('global.url');
-        $tablesNode = CompetitionFixtureTool::getTournamentBoxNodes($this->getCrawler());
+        $tablesNode = CompetitionGroupsMatchDayTool::getTournamentBoxNodes($this->getCrawler());
+        $matchSGroup = $this->getMatchStage('Group');
 
         $fixtureMatches = [];
         $matchDay = 1;
         foreach ($tablesNode as $box) {
             $boxNode = new Crawler();
             $boxNode->addNode($box);
-            $type = CompetitionFixtureTool::getTypeTournamentBox($boxNode);
+            $type = CompetitionGroupsMatchDayTool::getTypeTournamentBox($boxNode);
             $rows = null;
             switch ($type) {
                 case 'knockout':
+                    $rows = CompetitionGroupsMatchDayTool::getKnockoutRowsMatches($boxNode);
                     break;
                 case 'group':
-                    $rows = CompetitionFixtureTool::getGroupRowsMatches($boxNode);
+                    $rows = CompetitionGroupsMatchDayTool::getGroupRowsMatches($boxNode);
                     break;
             }
             if (empty($rows)) {
                 continue;
             }
-            /* @var Crawler $row */
-            foreach ($rows as $row) {
-                $groupName = CompetitionFixtureTool::getGroupNameFromTable($boxNode);
-                $match = $this->createMatchFromTournamentGroupsRow($row, $competitionSeason, $globalUrl->getUrl());
-                $match->setMatchGroup($groupName);
 
+            switch ($type) {
+                case 'knockout':
+                    /* @var Crawler $row */
+                    foreach ($rows as $section => $items) {
+                        foreach ($items as $row) {
+                            $match = $this->createMatchFromTournamentKnockoutRow($row, $competitionSeason,
+                                $globalUrl->getUrl());
+                            $matchStage = $this->getMatchStage($section);
+                            $match->setMatchStage($matchStage);
+                            $fixtureMatches[] = $match;
+                        }
+                    }
+                    break;
+                case 'group':
+                default:
+                    /* @var Crawler $row */
+                    foreach ($rows as $row) {
+                        $groupName = CompetitionGroupsMatchDayTool::getGroupNameFromTable($boxNode);
+                        $match = $this->createMatchFromTournamentGroupsRow($row, $competitionSeason,
+                            $globalUrl->getUrl());
+                        $match->setMatchGroup($groupName);
+                        $match->setMatchStage($matchSGroup);
+
+                        $seasonMatchTeams = $match->getCompetitionSeasonMatchTeams();
+                        foreach ($seasonMatchTeams as $seasonMatchTeam) {
+                            $team = $seasonMatchTeam->getTeam();
+                            $competitionSeasonTeam = $competitionSeason->getCompetitionSeasonTeams()->filter(
+                                function (CompetitionSeasonTeam $competitionSeasonTeam) use($team) {
+                                    return ($competitionSeasonTeam->getTeam()->getId() === $team->getId());
+                            })->first();
+                            /* @var CompetitionSeasonTeam $competitionSeasonTeam */
+                            $competitionSeasonTeam->setGroupName($groupName);
+                        }
+                        $fixtureMatches[] = $match;
+                    }
+                    break;
             }
             $matchDay++;
         }
@@ -367,12 +449,13 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     private function createMatchFromTournamentGroupsRow(
         Crawler $node,
         CompetitionSeason $competitionSeason,
-        $globalUrl)
-    {
+        $globalUrl
+    ) {
         $cells = $node->filter('td');
         $cellDate = $cells->eq(0)->text();
         $cellMatch = $cells->eq(3)->html();
@@ -380,6 +463,62 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
         $cellAway = $cells->eq(5)->html();
         $matchDate = DateTimeTool::createDateTime($cellDate);
         $matchTime = DateTimeTool::setTextTimeToDateTime($matchDate, '12:00 PM');
+        $path = CompetitionFixtureTool::extractMatchLink($cellMatch);
+        $homeTmkCode = CompetitionFixtureTool::extractTeamCode($cellHome);
+        $awayTmkCode = CompetitionFixtureTool::extractTeamCode($cellAway);
+        $url = $globalUrl . $path;
+        $tmkCode = UrlTool::getParamFromUrl($url, 4);
+
+        $match = $this->findFixtureByTmkCode($tmkCode);
+        if (!$match instanceof CompetitionSeasonMatch) {
+            $match = new CompetitionSeasonMatch();
+            $match->setTmkCode($tmkCode);
+        }
+        if (!$this->matchShouldBeUpdated($match)) {
+            return $match;
+        }
+        $match->setCompetitionSeason($competitionSeason);
+        $match->setMatchDatetime($matchTime);
+        $schema = (MetadataSchemaResources::createSchema())->setUrl($url);
+        $match->setMetadata($schema->getSchema());
+
+        try {
+            $match = $this->addCompetitionSeasonMatchTeam($match, $homeTmkCode, $cellMatch);
+            $match = $this->addCompetitionSeasonMatchTeam($match, $awayTmkCode, $cellMatch, false);
+            $fixtureMatches[] = $match;
+        } catch (EntityNotFoundException $e) {
+            $this->errors[] = [
+                'tmk_code' => $homeTmkCode,
+                'tmk_code_1' => $awayTmkCode,
+                'season' => $competitionSeason->getId(),
+            ];
+        }
+        return $match;
+    }
+
+    /**
+     * @param Crawler $node
+     * @param CompetitionSeason $competitionSeason
+     * @param $globalUrl
+     * @return CompetitionSeasonMatch|null
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    private function createMatchFromTournamentKnockoutRow(
+        Crawler $node,
+        CompetitionSeason $competitionSeason,
+        $globalUrl
+    ) {
+        $cells = $node->filter('td');
+        $cellDate = $cells->eq(0)->html();
+        $cellTime = $cells->eq(1)->text();
+        $cellMatch = $cells->eq(4)->html();
+        $cellHome = $cells->eq(3)->html();
+        $cellAway = $cells->eq(5)->html();
+        $matchDate = DateTimeTool::createDateTime($cellDate);
+        $matchTime = DateTimeTool::setTextTimeToDateTime($matchDate, $cellTime);
         $path = CompetitionFixtureTool::extractMatchLink($cellMatch);
         $homeTmkCode = CompetitionFixtureTool::extractTeamCode($cellHome);
         $awayTmkCode = CompetitionFixtureTool::extractTeamCode($cellAway);
@@ -433,13 +572,13 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
     {
         $result = $this->getDoctrine()
             ->getRepository(CompetitionSeasonMatch::class)
-            ->findBy(['tmk_code' => $tmkCode]);
+            ->findByTmkCode($tmkCode);
         if (count($result) > 1) {
             $this->getOutput()->writeln("Many fixture matches have been found for $tmkCode code");
         }
         return $this->getDoctrine()
             ->getRepository(CompetitionSeasonMatch::class)
-            ->findOneBy(['tmk_code' => $tmkCode]);
+            ->findOneByTmkCode($tmkCode);
     }
 
     /**
@@ -447,8 +586,11 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      * @param $tmkCode
      * @param $cellMatch
      * @param bool $home
-     * @return \Doctrine\Common\Collections\Collection
-     * @throws EntityNotFoundException
+     * @return CompetitionSeasonMatch
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     private function addCompetitionSeasonMatchTeam(
         CompetitionSeasonMatch $competitionSeasonMatch,
@@ -459,11 +601,20 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
         $team = $this
             ->getDoctrine()
             ->getRepository(Team::class)
-            ->findOneBy(['tmk_code' => $tmkCode]);
+            ->findOneByTmkCode($tmkCode);
         if (!$team instanceof Team) {
-            throw new EntityNotFoundException("Team with code: $tmkCode not found");
+            $this->getTeamByCodeCrawler()
+                ->setTmkCode($tmkCode)
+                ->process()
+                ->saveData();
+
+            $team = $this
+                ->getDoctrine()
+                ->getRepository(Team::class)
+                ->findOneByTmkCode($tmkCode);
         }
 
+        $this->addTeamToCollection($competitionSeasonMatch->getCompetitionSeason(), $team);
         $result = $competitionSeasonMatch
             ->getCompetitionSeasonMatchTeams()
             ->filter(function (CompetitionSeasonMatchTeam $competitionSFTeam) use ($team) {
@@ -485,8 +636,9 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
             $fixtureTeam->setScore($home ? $scoreHome : $scoreAway);
             $fixtureTeam->setIsVictory($this->isVictory($home, $scoreHome, $scoreAway));
             $fixtureTeam->setIsDraw(($scoreHome === $scoreAway));
-            $competitionSeasonMatch->setIsProcessed(true);
+            $competitionSeasonMatch->setIsPlayed(true);
         }
+        $competitionSeasonMatch->setIsProcessed(true);
         $competitionSeasonMatch->addCompetitionSeasonMatchTeam($fixtureTeam);
 
         return $competitionSeasonMatch;
@@ -511,6 +663,43 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
                 return false;
                 break;
         }
+    }
+
+    /**
+     * @param $stageName
+     * @return MatchStage|null
+     */
+    private function getMatchStage($stageName): ?MatchStage
+    {
+        return $this->getDoctrine()
+            ->getRepository(MatchStage::class)
+            ->findOneBy(['name' => $stageName]);
+    }
+
+    /**
+     * @param CompetitionSeason $competitionSeason
+     * @param Team $team
+     * @param null $groupName
+     * @return CompetitionSeasonMatchCrawler
+     */
+    private function addTeamToCollection(
+        CompetitionSeason $competitionSeason,
+        Team $team,
+        $groupName = null
+    ): CompetitionSeasonMatchCrawler {
+        $competitionSeasonTeam = $competitionSeason->getCompetitionSeasonTeams()->filter(
+            function (CompetitionSeasonTeam $competitionSeasonTeam) use($team) {
+                return ($competitionSeasonTeam->getTeam()->getId() === $team->getId());
+            })->first();
+        if (!$competitionSeasonTeam instanceof CompetitionSeasonTeam) {
+            $competitionSeasonTeam = new CompetitionSeasonTeam();
+            $competitionSeasonTeam->setTeam($team);
+            if (isset($groupName)) {
+                $competitionSeasonTeam->setGroupName($groupName);
+            }
+            $competitionSeason->addCompetitionSeasonTeam($competitionSeasonTeam);
+        }
+        return $this;
     }
 
 }

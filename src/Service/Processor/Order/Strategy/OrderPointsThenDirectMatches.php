@@ -1,15 +1,28 @@
 <?php
 
-namespace App\Service\Processor\Order;
+namespace App\Service\Processor\Order\Strategy;
 
 use App\Entity\CompetitionSeasonMatch;
 use App\Entity\CompetitionSeasonMatchTeam;
 use App\Entity\CompetitionSeasonTableItem;
+use App\Service\Processor\Order\OrderStrategyInterface;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
-class OrderStrategyPoints implements OrderStrategyInterface
+/**
+ * Class OrderStrategyPoints
+ * @package App\Service\Processor\Order\Strategy
+ */
+class OrderPointsThenDirectMatches implements OrderStrategyInterface
 {
+    /**
+     * @var ManagerRegistry
+     */
     private $doctrine;
+
+    /**
+     * @var CompetitionSeasonMatch[]
+     */
+    private $matches;
 
     /**
      * OrderStrategyPoints constructor.
@@ -26,6 +39,24 @@ class OrderStrategyPoints implements OrderStrategyInterface
     public function getDoctrine(): ManagerRegistry
     {
         return $this->doctrine;
+    }
+
+    /**
+     * @param $matches
+     * @return OrderPointsThenDirectMatches
+     */
+    public function setMatches($matches)
+    {
+        $this->matches = $matches;
+        return $this;
+    }
+
+    /**
+     * @return CompetitionSeasonMatch[]
+     */
+    public function getMatches()
+    {
+        return $this->matches;
     }
 
     /**
@@ -62,14 +93,7 @@ class OrderStrategyPoints implements OrderStrategyInterface
      */
     private function sortByMatchBetweenThem($tableItem1, $tableItem2)
     {
-        $competitionSeason = $tableItem1
-            ->getCompetitionSeasonTable()
-            ->setCompetitionSeason();
-
-        $matches = $this->getDoctrine()
-            ->getRepository(CompetitionSeasonMatch::class)
-            ->findBy(['competition_season' => $competitionSeason]);
-
+        $matches = $this->getMatches();
         $t1win = 0;
         $t2win = 0;
         foreach ($matches as $match) {

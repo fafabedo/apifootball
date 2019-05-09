@@ -47,7 +47,7 @@ abstract class AbstractProcessor implements ProcessorInterface
      * @param StyleInterface $outputStyle
      * @return ProcessorInterface
      */
-    public function setOutputStyle(StyleInterface $outputStyle): AbstractProcessor
+    public function setOutputStyle(StyleInterface $outputStyle)
     {
         $this->outputStyle = $outputStyle;
         return $this;

@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
@@ -17,6 +18,23 @@ class CompetitionSeasonRepository extends ServiceEntityRepository
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, CompetitionSeason::class);
+    }
+
+    /**
+     * @param Competition $competition
+     * @param bool $onlyActive
+     * @return CompetitionSeason[]
+     */
+    public function findByCompetition(Competition $competition, $onlyActive = true)
+    {
+        $filters = [
+            'competition' => $competition
+        ];
+        if ($onlyActive === false) {
+            $filters['archive'] = true;
+        }
+        return $this
+            ->findBy($filters);
     }
 
     // /**
