@@ -24,7 +24,7 @@ class CompetitionSeasonTableItem
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeasonTable", inversedBy="competitionSeasonTableItems")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=false, onDelete="CASCADE")
      */
     private $competition_season_table;
 

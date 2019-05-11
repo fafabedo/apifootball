@@ -14,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ApiResource()
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionRepository")
- * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "partial", "team_type.id": "exact"})
+ * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "partial", "team_type.id": "exact", "federation.id": "exact"})
  */
 class Competition
 {
@@ -29,7 +29,7 @@ class Competition
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=50)
+     * @ORM\Column(type="string", length=50, nullable=true)
      */
     private $code;
 

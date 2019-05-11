@@ -26,6 +26,7 @@ class CompetitionSeasonTeam
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeason", inversedBy="competitionSeasonTeams")
+     * @ORM\JoinColumn(onDelete="CASCADE")
      * @Groups({"season"})
      */
     private $competition_season;

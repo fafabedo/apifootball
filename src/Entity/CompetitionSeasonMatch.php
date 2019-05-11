@@ -34,7 +34,7 @@ class CompetitionSeasonMatch
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeason", inversedBy="competitionSeasonMatches")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=false, onDelete="CASCADE")
      */
     private $competition_season;
 

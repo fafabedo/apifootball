@@ -81,7 +81,7 @@ class FtAppProcessTableCommand extends Command
         $competition = $this
             ->getDoctrine()
             ->getRepository(Competition::class)
-            ->find(534);
+            ->find(3326);
         $this
             ->getCompetitionProcessor()
             ->setOutputStyle($io)

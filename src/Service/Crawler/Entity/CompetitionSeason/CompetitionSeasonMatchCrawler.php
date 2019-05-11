@@ -194,7 +194,9 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
         $this->createProgressBar('Crawl fixture information...', count($competitionSeasons));
         foreach ($competitionSeasons as $competitionSeason) {
             $slug = $competitionSeason->getCompetition()->getSlug();
-            $code = $competitionSeason->getCompetition()->getCode();
+            $tmkCode = $competitionSeason
+                ->getCompetition()
+                ->getTmkCode();
             $today = (new \DateTime('now -1 year'));
             if ($competitionSeason->getStartSeason() instanceof \DateTime) {
                 $today = $competitionSeason->getStartSeason();
@@ -206,7 +208,7 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
                 ->getCompetitionType()
                 ->getId();
             $url = $competitionTypeId === 1 ? $fixtureCollectionTournament->getUrl() : $fixtureCollection->getUrl();
-            $preparedUrl = $this->preparePath($url, [$slug, $code, $year]);
+            $preparedUrl = $this->preparePath($url, [$slug, $tmkCode, $year]);
             $this->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION_MATCH))
                 ->processPath($preparedUrl);
             switch ($competitionTypeId) {

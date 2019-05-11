@@ -66,11 +66,17 @@ class TableGroupsProcessor extends AbstractTableProcessor implements TableProces
 
         foreach ($groups as $group) {
             $groupName = $group['MatchGroup'];
-            $groupTable = $this->buildBaseTable($competitionSeason, $groupName);
             $matches = $this
                 ->getDoctrine()
                 ->getRepository(CompetitionSeasonMatch::class)
                 ->findMatchesByGroup($competitionSeason, $groupName);
+
+            $groupTable = $this
+                ->getDoctrine()
+                ->getRepository(CompetitionSeasonTable::class)
+                ->findOneTableByGroupName($competitionSeason, $groupName);
+
+            $groupTable = $this->buildBaseTable($competitionSeason, $groupName, $groupTable);
 
             $groupTable = $this->updateTableItemsByMatches($groupTable, $matches);
             $this->groupTables[] = $groupTable;

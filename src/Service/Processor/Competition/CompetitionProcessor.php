@@ -4,13 +4,8 @@ namespace App\Service\Processor\Competition;
 
 use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
-use App\Entity\CompetitionSeasonMatch;
-use App\Entity\CompetitionSeasonMatchTeam;
 use App\Entity\CompetitionSeasonTable;
-use App\Entity\CompetitionSeasonTableItem;
-use App\Entity\CompetitionSeasonTeam;
 use App\Entity\CompetitionType;
-use App\Entity\Team;
 use App\Service\Processor\AbstractProcessor;
 use App\Service\Processor\Order\OrderProxy;
 use App\Service\Processor\Table\TableProxy;
@@ -220,165 +215,6 @@ class CompetitionProcessor extends AbstractProcessor
     }
 
     /**
-     * @param CompetitionSeasonTable $table
-     * @param CompetitionSeasonTeam[] $baseTeams
-     * @return CompetitionSeasonTable
-     */
-    private function orderTableWithBaseTeams(CompetitionSeasonTable $table, array $baseTeams)
-    {
-        /* Include all teams */
-        foreach ($baseTeams as $competitionSeasonTeam) {
-            $teamFound = $table->getCompetitionSeasonTableItems()->filter(function (
-                CompetitionSeasonTableItem $tableItem
-            )
-            use ($competitionSeasonTeam) {
-                return ($tableItem->getTeam()->getId() === $competitionSeasonTeam->getTeam()->getId());
-            });
-            if ($teamFound->isEmpty()) {
-                $tableItem = $this->createNewEmptyTableItem($table, $competitionSeasonTeam->getTeam());
-                $table->addCompetitionSeasonTableItem($tableItem);
-            }
-        }
-
-        /* Update position */
-        foreach ($table->getCompetitionSeasonTableItems() as $tableItem) {
-            $items[$tableItem->getTeam()->getId()] = $tableItem->getPoints();
-        }
-        $items = $table->getCompetitionSeasonTableItems()->toArray();
-        usort($items, [$this, "sortTeamsByCriteria"]);
-
-        $position = 1;
-        foreach ($items as $item) {
-            $tableItem = $table
-                ->getCompetitionSeasonTableItems()
-                ->filter(function (CompetitionSeasonTableItem $tableItem) use ($item) {
-                    return ($tableItem->getTeam()->getId() === $item->getTeam()->getId());
-                })->first();
-            $tableItem->setPosition($position);
-            $position++;
-        }
-        return $table;
-    }
-
-    /**
-     * @param CompetitionSeasonTableItem $tableItem
-     * @param CompetitionSeasonMatch $match
-     * @param bool $isHome
-     * @return CompetitionSeasonTableItem
-     */
-    private function processTableItemFromMatch(
-        CompetitionSeasonTableItem $tableItem,
-        CompetitionSeasonMatch $match,
-        $isHome = true
-    ): CompetitionSeasonTableItem {
-        $matchTeam = $match
-            ->getCompetitionSeasonMatchTeams()
-            ->filter(function (CompetitionSeasonMatchTeam $matchTeam) use ($isHome) {
-                return ($matchTeam->getIsHome() === $isHome);
-            })->first();
-
-        $matchTeamAdversary = $match
-            ->getCompetitionSeasonMatchTeams()
-            ->filter(function (CompetitionSeasonMatchTeam $matchTeam) use ($isHome) {
-                return ($matchTeam->getIsHome() === !$isHome);
-            })->first();
-
-
-        /* @var CompetitionSeasonMatchTeam $matchTeam */
-        $tableItem->setTeam($matchTeam->getTeam());
-        /* Match counting */
-        $tableItem->setMatches(($tableItem->getMatches() + 1));
-        $win = $matchTeam->getIsVictory() ? 1 : 0;
-        $draw = $matchTeam->getIsDraw() ? 1 : 0;
-        $lose = $matchTeam->getIsVictory() ? 0 : 1;
-        $tableItem->setMatchesWin($win ? ($tableItem->getMatchesWin() + 1) : $tableItem->getMatchesWin());
-        $tableItem->setMatchesDraw($draw ? ($tableItem->getMatchesDraw() + 1) : $tableItem->getMatchesDraw());
-        $tableItem->setMatchesLost($lose ? ($tableItem->getMatchesLost() + 1) : $tableItem->getMatchesLost());
-        switch (true) {
-            case $isHome:
-                $tableItem->setHome($matchTeam->getIsHome() ? ($tableItem->getHome() + 1) : $tableItem->getHome());
-                $tableItem->setHomeWin(($matchTeam->getIsHome() && $win) ? ($tableItem->getHomeWin() + 1) : $tableItem->getHomeWin());
-                $tableItem->setHomeDraw(($matchTeam->getIsHome() && $draw) ? ($tableItem->getHomeDraw() + 1) : $tableItem->getHomeDraw());
-                $tableItem->setHome(($matchTeam->getIsHome() && $lose) ? ($tableItem->getHomeLost() + 1) : $tableItem->getHomeLost());
-                break;
-            default:
-                $tableItem->setAway(!$matchTeam->getIsHome() ?? ($tableItem->getAway() + 1));
-                $tableItem->setAwayWin((!$matchTeam->getIsHome() && $win) ? ($tableItem->getAwayWin() + 1) : $tableItem->getAwayWin());
-                $tableItem->setAwayDraw((!$matchTeam->getIsHome() && $draw) ? ($tableItem->getAwayDraw() + 1) : $tableItem->getAwayDraw());
-                $tableItem->setAwayLost((!$matchTeam->getIsHome() && $lose) ? ($tableItem->getAwayLost() + 1) : $tableItem->getAwayLost());
-                break;
-        }
-        $tableItem->setGoalsFor($tableItem->getGoalsFor() + $matchTeam->getScore());
-        $tableItem->setGoalsAgainst($tableItem->getGoalsAgainst() + $matchTeamAdversary->getScore());
-
-        switch (true) {
-            case $win === 1:
-                $tableItem->setPoints($tableItem->getPoints() + 3);
-                break;
-            case $draw === 1:
-                $tableItem->setPoints($tableItem->getPoints() + 1);
-                break;
-            case $lose === 1:
-                $tableItem->setPoints($tableItem->getPoints() + 0);
-                break;
-        }
-
-        return $tableItem;
-    }
-
-    /**
-     * @param CompetitionSeasonTable $table
-     * @param Team $team
-     * @return CompetitionSeasonTableItem
-     */
-    private function createNewEmptyTableItem(CompetitionSeasonTable $table, Team $team)
-    {
-        $tableItem = new CompetitionSeasonTableItem();
-        $tableItem->setCompetitionSeasonTable($table);
-        $tableItem->setTeam($team);
-        $tableItem->setPoints(0);
-        $tableItem->setHome(0);
-        $tableItem->setHomeWin(0);
-        $tableItem->setHomeDraw(0);
-        $tableItem->setHomeLost(0);
-        $tableItem->setAway(0);
-        $tableItem->setAwayWin(0);
-        $tableItem->setAwayDraw(0);
-        $tableItem->setAwayLost(0);
-        $tableItem->setGoalsAgainst(0);
-        $tableItem->setGoalsFor(0);
-        $tableItem->setMatches(0);
-        $tableItem->setMatchesWin(0);
-        $tableItem->setMatchesDraw(0);
-        $tableItem->setMatchesLost(0);
-        $tableItem->setPosition(0);
-        return $tableItem;
-    }
-
-
-    /**
-     * @param CompetitionSeasonMatch[] $matches
-     * @return array
-     */
-    private function getStartsMatchDayDateTime(array $matches)
-    {
-        $startsAt = [];
-        /* @var $match CompetitionSeasonMatch */
-        foreach ($matches as $match) {
-            $matchDay = $match->getMatchDay();
-            if (empty($startsAt[$matchDay])) {
-                $startsAt[$matchDay] = $match->getMatchDatetime();
-            }
-            /* @var $date \DateTime */
-            $date = $startsAt[$matchDay];
-            if ($date->getTimestamp() > $match->getMatchDatetime()->getTimestamp()) {
-                $startsAt[$matchDay] = $match->getMatchDatetime();
-            }
-        }
-        return $startsAt;
-    }
-
-    /**
      * @return CompetitionSeason[]|object[]
      */
     private function getCompetitionSeasons()
@@ -397,34 +233,6 @@ class CompetitionProcessor extends AbstractProcessor
                     ->findBy(['archive' => false]);
                 break;
         }
-    }
-
-    /**
-     * @param CompetitionSeasonTableItem $a
-     * @param CompetitionSeasonTableItem $b
-     * @return int
-     */
-    private function sortTeamsByCriteria($a, $b)
-    {
-        switch (true) {
-            case ($a->getPoints() < $b->getPoints()):
-                return -1;
-                break;
-            case ($a->getPoints() === $b->getPoints()):
-                $aDiff = $a->getGoalsFor() - $a->getGoalsAgainst();
-                $bDiff = $b->getGoalsFor() - $b->getGoalsAgainst();
-                if ($aDiff === $bDiff) {
-                    return ($a->getGoalsFor() < $b->getGoalsFor() ? -1 : 1);
-                }
-                else {
-                    return ($aDiff < $bDiff ? -1 : 1);
-                }
-                break;
-            default:
-                return 1;
-                break;
-        }
-
     }
 
 }

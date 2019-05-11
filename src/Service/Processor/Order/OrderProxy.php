@@ -2,10 +2,11 @@
 
 namespace App\Service\Processor\Order;
 
+use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionSeasonMatch;
 use App\Entity\CompetitionSeasonTable;
 use App\Entity\CompetitionSeasonTableItem;
-use App\Service\Processor\Table\TableProxy;
+use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -30,12 +31,24 @@ class OrderProxy
     private $container;
 
     /**
+     * @var ManagerRegistry
+     */
+    private $doctrine;
+
+    /**
+     * @var CompetitionSeasonMatch[]
+     */
+    private $matches = [];
+
+    /**
      * OrderContext constructor.
      * @param ContainerInterface $container
+     * @param ManagerRegistry $doctrine
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, ManagerRegistry $doctrine)
     {
         $this->container = $container;
+        $this->doctrine = $doctrine;
     }
 
     /**
@@ -44,6 +57,14 @@ class OrderProxy
     public function getContainer(): ContainerInterface
     {
         return $this->container;
+    }
+
+    /**
+     * @return ManagerRegistry
+     */
+    public function getDoctrine(): ManagerRegistry
+    {
+        return $this->doctrine;
     }
 
     /**
@@ -77,12 +98,6 @@ class OrderProxy
         return $this;
     }
 
-    public function setMatches($matches): OrderProxy
-    {
-        $this->getOrderStrategy()->setMatches($matches);
-        return $this;
-    }
-
     /**
      * @return CompetitionSeasonTable[]
      */
@@ -111,20 +126,24 @@ class OrderProxy
         return $tableItems;
     }
 
+    /**
+     * @return $this
+     */
     public function process()
     {
-        $seasonTables = $this->getCompetitionSeasonTables();
-        foreach ($seasonTables as $seasonTable) {
-            $tableItems = $seasonTable->getCompetitionSeasonTableItems();
+        foreach ($this->competitionSeasonTables as $key => $seasonTable) {
+            $tableItems = $this->competitionSeasonTables[$key]
+                ->getCompetitionSeasonTableItems();
+            $matches = $this->getMatchesBySeason($seasonTable->getCompetitionSeason());
+            $this->getOrderStrategy()->setMatches($matches);
             $arrayTableItems = $tableItems->toArray();
             $arrayTableItems = $this->sortItems($arrayTableItems);
-
-            $seasonTable->getCompetitionSeasonTableItems()->clear();
+            $this->competitionSeasonTables[$key]->getCompetitionSeasonTableItems()->clear();
             /* @var CompetitionSeasonTableItem $item */
             $position = 1;
-            foreach ($arrayTableItems as $item) {
-                $item->setPosition($position);
-                $seasonTable->addCompetitionSeasonTableItem($item);
+            foreach ($arrayTableItems as $tableItem) {
+                $tableItem->setPosition($position);
+                $this->competitionSeasonTables[$key]->addCompetitionSeasonTableItem($tableItem);
                 $position++;
             }
         }
@@ -137,6 +156,18 @@ class OrderProxy
     public function getData()
     {
         return $this->getCompetitionSeasonTables();
+    }
+
+    private function getMatchesBySeason(CompetitionSeason $competitionSeason)
+    {
+        $competitionSeasonId = $competitionSeason->getId();
+        if (!isset($this->matches[$competitionSeasonId])) {
+            $this->matches[$competitionSeasonId] = $this
+                ->getDoctrine()
+                ->getRepository(CompetitionSeasonMatch::class)
+                ->findMatchesBySeason($competitionSeason);
+        }
+        return $this->matches[$competitionSeasonId];
     }
 
 

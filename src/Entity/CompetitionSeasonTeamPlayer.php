@@ -20,7 +20,7 @@ class CompetitionSeasonTeamPlayer
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeasonTeam", inversedBy="competitionSeasonTeamPlayers")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=false, onDelete="CASCADE")
      */
     private $competition_season_team;
 

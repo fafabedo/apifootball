@@ -29,7 +29,7 @@ class CompetitionSeasonTable
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeason")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=false, onDelete="CASCADE")
      */
     private $competitionSeason;
 

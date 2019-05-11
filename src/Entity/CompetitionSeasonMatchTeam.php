@@ -23,13 +23,13 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeasonMatch", inversedBy="competitionSeasonMatchTeams")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=false, onDelete="CASCADE")
      */
     private $competition_season_match;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Team")
-     * @ORM\JoinColumn(nullable=false)
+     * @ORM\JoinColumn(nullable=true)
      */
     private $team;
 
@@ -62,6 +62,11 @@ class CompetitionSeasonMatchTeam
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeasonMatch")
      */
     private $competition_season_match_result;
+
+    /**
+     * @ORM\Column(type="string", length=100, nullable=true)
+     */
+    private $formula;
 
     /**
      * @return int|null
@@ -226,6 +231,18 @@ class CompetitionSeasonMatchTeam
     public function setCompetitionSeasonMatchResult(?CompetitionSeasonMatch $competition_season_match_result): self
     {
         $this->competition_season_match_result = $competition_season_match_result;
+
+        return $this;
+    }
+
+    public function getFormula(): ?string
+    {
+        return $this->formula;
+    }
+
+    public function setFormula(?string $formula): self
+    {
+        $this->formula = $formula;
 
         return $this;
     }

@@ -6,6 +6,7 @@ namespace App\Service\Crawler\Entity\Competition;
 
 use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
+use App\Entity\CompetitionType;
 use App\Entity\TeamType;
 use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\CrawlerInterface;
@@ -89,21 +90,26 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
      */
     private function createCompetitions(array $comps, TeamType $teamType): array
     {
+        $competitionType = $this
+            ->getDoctrine()
+            ->getRepository(CompetitionType::class)
+            ->find(CompetitionType::TOURNAMENT);
         $competitions = [];
         foreach ($comps as $item) {
             if (!isset($item['url']) || !isset($item['name'])) {
                 continue;
             }
             $url = $this->getGlobalUrl()->getUrl() . $item['url'];
-            $code = UrlTool::getParamFromUrl($url, 4);
+            $tmkCode = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
-            if ($code === 'C19A') {
-                $tmp = 1;
-            }
-            $competition = $this->getCompetitionByCodeOrSlug($code, $slug);
+
+            $competition = $this
+                ->getDoctrine()
+                ->getRepository(Competition::class)
+                ->findOneByTmkCode($tmkCode);
             if (!$competition instanceof Competition) {
                 $competition = new Competition();
-                $competition->setCode($code);
+                $competition->setTmkCode($tmkCode);
                 $competition->setSlug($slug);
             }
             $competition->setName($item['name']);
@@ -111,15 +117,18 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
             $federation = CompetitionAmericaTool::determineFederation($this->getDoctrine(), $item['name']);
             $competition->setFederation($federation);
             $competition->setLeagueLevel(1);
+            $competition->setCompetitionType($competitionType);
             $schema = MetadataSchemaResources::createSchema()
                 ->setUrl($url);
             $competition->setMetadata($schema->getSchema());
 
             // Competition Season
-            $competitionSeason = new CompetitionSeason();
-            $competitionSeason->setArchive(false);
-            $competitionSeason->setMetadata($schema->getSchema());
-            $competition->addCompetitionSeason($competitionSeason);
+            if ($competition->getCompetitionSeasons()->count() === 0) {
+                $competitionSeason = new CompetitionSeason();
+                $competitionSeason->setArchive(false);
+                $competitionSeason->setMetadata($schema->getSchema());
+                $competition->addCompetitionSeason($competitionSeason);
+            }
 
             $competitions[] = $competition;
         }

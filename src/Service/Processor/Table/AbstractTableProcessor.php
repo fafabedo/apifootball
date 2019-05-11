@@ -8,7 +8,6 @@ use App\Entity\CompetitionSeasonMatchTeam;
 use App\Entity\CompetitionSeasonTable;
 use App\Entity\CompetitionSeasonTableItem;
 use App\Entity\Team;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Inflector\Inflector;
 use Doctrine\Common\Persistence\ManagerRegistry;
 

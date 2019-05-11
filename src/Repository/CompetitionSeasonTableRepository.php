@@ -30,10 +30,38 @@ class CompetitionSeasonTableRepository extends ServiceEntityRepository
         return $this
             ->findOneBy(
                 [
-                    'competition_season' => $competitionSeason,
+                    'competitionSeason' => $competitionSeason,
                     'match_day' => $matchDay
                 ]
             );
+    }
+
+    /**
+     * @param CompetitionSeason $competitionSeason
+     * @param $groupName
+     * @return CompetitionSeasonTable|null
+     */
+    public function findOneTableByGroupName(CompetitionSeason $competitionSeason, $groupName)
+    {
+        return $this->findOneBy(
+            [
+                'competitionSeason' => $competitionSeason,
+                'groupName' => $groupName
+            ]
+        );
+
+    }
+
+    public function findGroupsByCompetition(CompetitionSeason $competitionSeason)
+    {
+        return $this->createquerybuilder('cst')
+            ->select('cst.MatchGroup')
+            ->where('csm.competition_season = :competition')
+            ->setParameter('competition', $competitionSeason)
+            ->orderby('csm.MatchGroup', 'asc')
+            ->distinct()
+            ->getquery()
+            ->getresult();
     }
 
     // /**
