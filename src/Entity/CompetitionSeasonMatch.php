@@ -123,7 +123,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return \DateTimeInterface|null
-     * @Groups({"fixture"})
+     * @Groups({"fixture", "season"})
      */
     public function getMatchDatetime(): ?\DateTimeInterface
     {
@@ -143,7 +143,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return int|null
-     * @Groups({"fixture"})
+     * @Groups({"fixture", "season"})
      */
     public function getMatchDay(): ?int
     {
@@ -163,6 +163,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return array|null
+     * @Groups({"fixture", "season"})
      */
     public function getMetadata(): ?array
     {
@@ -241,6 +242,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return bool|null
+     * @Groups({"fixture", "season"})
      */
     public function getIsProcessed(): ?bool
     {
@@ -260,7 +262,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return bool|null
-     * @Groups({"fixture"})
+     * @Groups({"fixture", "season"})
      */
     public function getIsPlayed(): ?bool
     {
@@ -300,7 +302,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return string|null
-     * @Groups({"fixture"})
+     * @Groups({"fixture", "season"})
      */
     public function getMatchGroup(): ?string
     {

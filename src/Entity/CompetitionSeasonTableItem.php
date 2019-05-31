@@ -47,12 +47,12 @@ class CompetitionSeasonTableItem
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $matches_win;
+    private $matches_won;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $matches_draw;
+    private $matches_drawn;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
@@ -67,12 +67,12 @@ class CompetitionSeasonTableItem
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $home_win;
+    private $home_won;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $home_draw;
+    private $home_drawn;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
@@ -87,12 +87,12 @@ class CompetitionSeasonTableItem
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $away_win;
+    private $away_won;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $away_draw;
+    private $away_drawn;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
@@ -186,18 +186,18 @@ class CompetitionSeasonTableItem
      * @return int|null
      * @Groups({"table"})
      */
-    public function getMatchesWin(): ?int
+    public function getMatchesWon(): ?int
     {
-        return $this->matches_win;
+        return $this->matches_won;
     }
 
     /**
-     * @param int|null $matches_win
+     * @param int|null $matches_won
      * @return CompetitionSeasonTableItem
      */
-    public function setMatchesWin(?int $matches_win): self
+    public function setMatchesWon(?int $matches_won): self
     {
-        $this->matches_win = $matches_win;
+        $this->matches_won = $matches_won;
 
         return $this;
     }
@@ -206,18 +206,18 @@ class CompetitionSeasonTableItem
      * @return int|null
      * @Groups({"table"})
      */
-    public function getMatchesDraw(): ?int
+    public function getMatchesDrawn(): ?int
     {
-        return $this->matches_draw;
+        return $this->matches_drawn;
     }
 
     /**
-     * @param int|null $matches_draw
+     * @param int|null $matches_drawn
      * @return CompetitionSeasonTableItem
      */
-    public function setMatchesDraw(?int $matches_draw): self
+    public function setMatchesDrawn(?int $matches_drawn): self
     {
-        $this->matches_draw = $matches_draw;
+        $this->matches_drawn = $matches_drawn;
 
         return $this;
     }
@@ -266,18 +266,18 @@ class CompetitionSeasonTableItem
      * @return int|null
      * @Groups({"table"})
      */
-    public function getHomeWin(): ?int
+    public function getHomeWon(): ?int
     {
-        return $this->home_win;
+        return $this->home_won;
     }
 
     /**
-     * @param int|null $home_win
+     * @param int|null $home_won
      * @return CompetitionSeasonTableItem
      */
-    public function setHomeWin(?int $home_win): self
+    public function setHomeWon(?int $home_won): self
     {
-        $this->home_win = $home_win;
+        $this->home_won = $home_won;
 
         return $this;
     }
@@ -286,18 +286,18 @@ class CompetitionSeasonTableItem
      * @return int|null
      * @Groups({"table"})
      */
-    public function getHomeDraw(): ?int
+    public function getHomeDrawn(): ?int
     {
-        return $this->home_draw;
+        return $this->home_drawn;
     }
 
     /**
-     * @param int|null $home_draw
+     * @param int|null $home_drawn
      * @return CompetitionSeasonTableItem
      */
-    public function setHomeDraw(?int $home_draw): self
+    public function setHomeDrawn(?int $home_drawn): self
     {
-        $this->home_draw = $home_draw;
+        $this->home_drawn = $home_drawn;
 
         return $this;
     }
@@ -346,18 +346,18 @@ class CompetitionSeasonTableItem
      * @return int|null
      * @Groups({"table"})
      */
-    public function getAwayWin(): ?int
+    public function getAwayWon(): ?int
     {
-        return $this->away_win;
+        return $this->away_won;
     }
 
     /**
-     * @param int|null $away_win
+     * @param int|null $away_won
      * @return CompetitionSeasonTableItem
      */
-    public function setAwayWin(?int $away_win): self
+    public function setAwayWon(?int $away_won): self
     {
-        $this->away_win = $away_win;
+        $this->away_won = $away_won;
 
         return $this;
     }
@@ -366,18 +366,18 @@ class CompetitionSeasonTableItem
      * @return int|null
      * @Groups({"table"})
      */
-    public function getAwayDraw(): ?int
+    public function getAwayDrawn(): ?int
     {
-        return $this->away_draw;
+        return $this->away_drawn;
     }
 
     /**
-     * @param int|null $away_draw
+     * @param int|null $away_drawn
      * @return CompetitionSeasonTableItem
      */
-    public function setAwayDraw(?int $away_draw): self
+    public function setAwayDrawn(?int $away_drawn): self
     {
-        $this->away_draw = $away_draw;
+        $this->away_drawn = $away_drawn;
 
         return $this;
     }

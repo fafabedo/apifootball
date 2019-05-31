@@ -235,11 +235,19 @@ class CompetitionSeasonMatchTeam
         return $this;
     }
 
+    /**
+     * @return string|null
+     * @Groups({"fixture", "season"})
+     */
     public function getFormula(): ?string
     {
         return $this->formula;
     }
 
+    /**
+     * @param string|null $formula
+     * @return CompetitionSeasonMatchTeam
+     */
     public function setFormula(?string $formula): self
     {
         $this->formula = $formula;

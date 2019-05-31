@@ -102,12 +102,23 @@ class Player
     private $playerContracts;
 
     /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $prefered_number;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\PlayerMaketValue", mappedBy="player", orphanRemoval=true)
+     */
+    private $playerMaketValues;
+
+    /**
      * Player constructor.
      */
     public function __construct()
     {
         $this->playerPositions = new ArrayCollection();
         $this->playerContracts = new ArrayCollection();
+        $this->playerMaketValues = new ArrayCollection();
     }
 
     /**
@@ -395,6 +406,49 @@ class Player
             // set the owning side to null (unless already changed)
             if ($playerContract->getPlayer() === $this) {
                 $playerContract->setPlayer(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getPreferedNumber(): ?int
+    {
+        return $this->prefered_number;
+    }
+
+    public function setPreferedNumber(?int $prefered_number): self
+    {
+        $this->prefered_number = $prefered_number;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|PlayerMaketValue[]
+     */
+    public function getPlayerMaketValues(): Collection
+    {
+        return $this->playerMaketValues;
+    }
+
+    public function addPlayerMaketValue(PlayerMaketValue $playerMaketValue): self
+    {
+        if (!$this->playerMaketValues->contains($playerMaketValue)) {
+            $this->playerMaketValues[] = $playerMaketValue;
+            $playerMaketValue->setPlayer($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlayerMaketValue(PlayerMaketValue $playerMaketValue): self
+    {
+        if ($this->playerMaketValues->contains($playerMaketValue)) {
+            $this->playerMaketValues->removeElement($playerMaketValue);
+            // set the owning side to null (unless already changed)
+            if ($playerMaketValue->getPlayer() === $this) {
+                $playerMaketValue->setPlayer(null);
             }
         }
 

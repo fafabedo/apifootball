@@ -199,9 +199,11 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
             $competition->setMetadata($schema->getSchema());
 
             // Competition Season
-            $competitionSeason = new CompetitionSeason();
-            $competitionSeason->setArchive(false);
-            $competition->addCompetitionSeason($competitionSeason);
+            if ($competition->getCompetitionSeasons()->count() === 0) {
+                $competitionSeason = new CompetitionSeason();
+                $competitionSeason->setArchive(false);
+                $competition->addCompetitionSeason($competitionSeason);
+            }
 
             $competitions[] = $competition;
         }

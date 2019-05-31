@@ -100,11 +100,14 @@ class TableLeagueProcessor extends AbstractTableProcessor implements TableProces
             $timestamp = $dateTime->getTimestamp() - (60 * 60 * 24);
             $dateTimeTable = (new \DateTime())->setTimestamp($timestamp);
             $seasonTable = $this->buildBaseTable($competitionSeason, $matchDay, $dateTimeTable, $seasonTable);
-
+            $nextMatchDay = $matchDay + 1;
+            if (!isset($startsAt[$nextMatchDay])) {
+                $startsAt[$nextMatchDay] = new \DateTime();
+            }
             $matches = $this
                 ->getDoctrine()
                 ->getRepository(CompetitionSeasonMatch::class)
-                ->findMatchesByMathDay($competitionSeason, $matchDay, $startsAt[$matchDay + 1]);
+                ->findMatchesByMathDay($competitionSeason, $matchDay, $startsAt[$nextMatchDay]);
 
             $seasonTable = $this->updateTableItemsByMatches($seasonTable, $matches);
             $this->seasonTables[] = $seasonTable;

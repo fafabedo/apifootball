@@ -99,7 +99,7 @@ class RequestService
             $content = $this->request($path, $method, $params);
             $this
                 ->getCacheManager()
-                ->setPageCache($cid, $content);
+                ->setPageCache($cid, $path, $content);
         } catch (\Exception $e) {
             $content = '';
         }

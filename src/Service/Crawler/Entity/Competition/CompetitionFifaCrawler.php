@@ -30,6 +30,9 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
 
     /**
      * @return CrawlerInterface
+     * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \App\Exception\InvalidMethodException
+     * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function process(): CrawlerInterface
@@ -168,9 +171,11 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
             $competition->setMetadata($schema->getSchema());
 
             // Competition Season
-            $competitionSeason = new CompetitionSeason();
-            $competitionSeason->setArchive(false);
-            $competition->addCompetitionSeason($competitionSeason);
+            if ($competition->getCompetitionSeasons()->count() === 0) {
+                $competitionSeason = new CompetitionSeason();
+                $competitionSeason->setArchive(false);
+                $competition->addCompetitionSeason($competitionSeason);
+            }
 
             $competitions[] = $competition;
         }

@@ -90,6 +90,11 @@ class Team
     private $teamCoachingStaff;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\TeamAward", mappedBy="team", orphanRemoval=true)
+     */
+    private $teamAwards;
+
+    /**
      * Team constructor.
      */
     public function __construct()
@@ -97,6 +102,7 @@ class Team
         $this->competitionSeasonMatchTeams = new ArrayCollection();
         $this->competitionSeasonTeams = new ArrayCollection();
         $this->teamCoachingStaff = new ArrayCollection();
+        $this->teamAwards = new ArrayCollection();
     }
 
     /**
@@ -356,6 +362,37 @@ class Team
             // set the owning side to null (unless already changed)
             if ($teamCoachingStaff->getTeam() === $this) {
                 $teamCoachingStaff->setTeam(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|TeamAward[]
+     */
+    public function getTeamAwards(): Collection
+    {
+        return $this->teamAwards;
+    }
+
+    public function addTeamAward(TeamAward $teamAward): self
+    {
+        if (!$this->teamAwards->contains($teamAward)) {
+            $this->teamAwards[] = $teamAward;
+            $teamAward->setTeam($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTeamAward(TeamAward $teamAward): self
+    {
+        if ($this->teamAwards->contains($teamAward)) {
+            $this->teamAwards->removeElement($teamAward);
+            // set the owning side to null (unless already changed)
+            if ($teamAward->getTeam() === $this) {
+                $teamAward->setTeam(null);
             }
         }
 

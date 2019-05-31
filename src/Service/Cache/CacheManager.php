@@ -93,11 +93,12 @@ class CacheManager
      * @param $content
      * @throws \Exception
      */
-    public function setPageCache($cid, $content): void
+    public function setPageCache($cid, $path, $content): void
     {
         $content = HtmlTool::trimHtml($content);
         $cachePage = new CachePage();
         $cachePage->setCacheId($cid);
+        $cachePage->setCollection($path);
         $cachePage->setData($content);
         $cachePage->setExpire(false);
         $cachePage->setLifetime($this->getLifetime());
