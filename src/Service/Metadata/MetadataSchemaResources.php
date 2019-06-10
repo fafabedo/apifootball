@@ -41,7 +41,7 @@ class MetadataSchemaResources implements MetadataInterface
      * @return MetadataSchemaResources
      * @throws InvalidMetadataSchema
      */
-    static public function createSchema($schema = []): MetadataInterface
+    static public function createSchema($schema = []): MetadataSchemaResources
     {
         return new self($schema);
     }

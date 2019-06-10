@@ -14,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ApiResource()
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionRepository")
- * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "partial", "team_type.id": "exact", "federation.id": "exact"})
+ * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "partial", "team_type.id": "exact", "federation.id": "exact", "isFeatured":"exact"})
  */
 class Competition
 {
@@ -24,7 +24,7 @@ class Competition
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="bigint")
      */
     private $id;
 
@@ -88,6 +88,11 @@ class Competition
      * @ORM\Column(type="boolean", nullable=true)
      */
     private $is_youth_competition;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $isFeatured;
 
     /**
      * Competition constructor.
@@ -314,6 +319,18 @@ class Competition
     public function setIsYouthCompetition(?bool $is_youth_competition): self
     {
         $this->is_youth_competition = $is_youth_competition;
+
+        return $this;
+    }
+
+    public function getIsFeatured(): ?bool
+    {
+        return $this->isFeatured;
+    }
+
+    public function setIsFeatured(?bool $isFeatured): self
+    {
+        $this->isFeatured = $isFeatured;
 
         return $this;
     }

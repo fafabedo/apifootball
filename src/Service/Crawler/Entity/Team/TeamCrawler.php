@@ -105,7 +105,7 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
      */
     public function process(): CrawlerInterface
     {
-        $teamCollection = $this->getConfigSchema('team.collection.url');
+        $teamCollection = $this->getConfigSchema('crawler.team.collection.url');
         $competitions = $this->getCompetitions();
 
         $this->createProgressBar('Crawling competitions to scope', count($competitions));
@@ -180,7 +180,7 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
      */
     private function processTeamCodes(Competition $competition, $teamCodes): array
     {
-        $globalSchema = $this->getConfigSchema('global.url');
+        $globalSchema = $this->getConfigSchema('crawler.global.url');
         $teams = [];
         foreach ($teamCodes as $item) {
             $url = $globalSchema->getUrl() . $item['url'];
@@ -213,7 +213,7 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
     {
         $globalConfig =$this
             ->getConfigManager()
-            ->getValue('global.url')
+            ->getValue('crawler.global.url')
         ;
         return $this
             ->getCrawler()
@@ -282,7 +282,7 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
         $levels = range(1, $this->getLevel());
         $filters['league_level'] = $levels;
         if ($this->getCompetition() instanceof Competition) {
-            $filters['competition'] = $this->getCompetition();
+            $filters['id'] = $this->getCompetition();
         }
         return $this->getDoctrine()
             ->getRepository(Competition::class)

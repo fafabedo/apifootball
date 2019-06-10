@@ -26,7 +26,7 @@ class CompetitionSeason
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="bigint")
      * @Groups({"season"})
      */
     private $id;

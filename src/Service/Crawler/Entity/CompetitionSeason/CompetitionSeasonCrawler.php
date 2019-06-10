@@ -361,7 +361,7 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
      */
     private function createTeamFromHtml($existentTeams, Country $country = null)
     {
-        $baseUrl = $this->getConfigSchema('global.url');
+        $baseUrl = $this->getConfigSchema('crawler.global.url');
         $teams = CompetitionMainPageTool::getTeamsFromPage($this->getCrawler());
         $newTeams = [];
         foreach ($teams as $teamInfo) {

@@ -2,9 +2,11 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Core\Annotation\ApiResource;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
+ * @ApiResource()
  * @ORM\Entity(repositoryClass="App\Repository\CachePageRepository")
  */
 class CachePage
@@ -46,6 +48,10 @@ class CachePage
      */
     private $lifetime;
 
+    /**
+     * @ORM\Column(type="text", nullable=true)
+     */
+    private $pathUrl;
 
     /**
      * @return int|null
@@ -130,11 +136,18 @@ class CachePage
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getCollection(): ?string
     {
         return $this->collection;
     }
 
+    /**
+     * @param string|null $collection
+     * @return CachePage
+     */
     public function setCollection(?string $collection): self
     {
         $this->collection = $collection;
@@ -142,15 +155,42 @@ class CachePage
         return $this;
     }
 
+    /**
+     * @return int|null
+     */
     public function getLifetime(): ?int
     {
         return $this->lifetime;
     }
 
+    /**
+     * @param int|null $lifetime
+     * @return CachePage
+     */
     public function setLifetime(?int $lifetime): self
     {
         $this->lifetime = $lifetime;
 
         return $this;
     }
+
+    /**
+     * @return string|null
+     */
+    public function getPathUrl(): ?string
+    {
+        return $this->pathUrl;
+    }
+
+    /**
+     * @param string|null $pathUrl
+     * @return CachePage
+     */
+    public function setPathUrl(?string $pathUrl): self
+    {
+        $this->pathUrl = $pathUrl;
+
+        return $this;
+    }
+
 }

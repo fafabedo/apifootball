@@ -51,7 +51,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
     private function getClubCompetitions(): array
     {
         $europeCompetitionSchema = $this
-            ->getConfigSchema('competition.america.collection.url');
+            ->getConfigSchema('crawler.competition.america.collection.url');
         if ($europeCompetitionSchema->getUrl() === null) {
             return [];
         }

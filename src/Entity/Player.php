@@ -4,10 +4,12 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Traits\MetadataTrait;
+use App\Traits\TmkEntityTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as Serializer;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -17,11 +19,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Player
 {
     use MetadataTrait;
+    use TmkEntityTrait;
 
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer", name="id")
+     * @ORM\Column(type="bigint", name="id")
      */
     private $id;
 
@@ -35,11 +38,6 @@ class Player
      * @Assert\NotBlank()
      */
     private $shortname;
-
-    /**
-     * @ORM\Column(type="guid")
-     */
-    private $uuid;
 
     /**
      * @var \DateTime|null
@@ -104,12 +102,17 @@ class Player
     /**
      * @ORM\Column(type="integer", nullable=true)
      */
-    private $prefered_number;
+    private $jerseyNumber;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\PlayerMaketValue", mappedBy="player", orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity="App\Entity\PlayerMarketValue", mappedBy="player", orphanRemoval=true)
      */
-    private $playerMaketValues;
+    private $playerMarketValues;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $FullName;
 
     /**
      * Player constructor.
@@ -118,7 +121,7 @@ class Player
     {
         $this->playerPositions = new ArrayCollection();
         $this->playerContracts = new ArrayCollection();
-        $this->playerMaketValues = new ArrayCollection();
+        $this->playerMarketValues = new ArrayCollection();
     }
 
     /**
@@ -163,25 +166,6 @@ class Player
     public function setShortname($shortname)
     {
         $this->shortname = $shortname;
-        return $this;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getUuid(): ?string
-    {
-        return $this->uuid;
-    }
-
-    /**
-     * @param string|null $uuid
-     * @return Player
-     */
-    public function setUuid(?string $uuid): self
-    {
-        $this->uuid = $uuid;
-
         return $this;
     }
 
@@ -239,24 +223,6 @@ class Player
     {
         $this->height = $height;
 
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getUrl()
-    {
-        return $this->url;
-    }
-
-    /**
-     * @param mixed $url
-     * @return Player
-     */
-    public function setUrl($url)
-    {
-        $this->url = $url;
         return $this;
     }
 
@@ -412,45 +378,57 @@ class Player
         return $this;
     }
 
-    public function getPreferedNumber(): ?int
+    public function getJerseyNumber(): ?int
     {
-        return $this->prefered_number;
+        return $this->jerseyNumber;
     }
 
-    public function setPreferedNumber(?int $prefered_number): self
+    public function setJerseyNumber(?int $jerseyNumber): self
     {
-        $this->prefered_number = $prefered_number;
+        $this->jerseyNumber = $jerseyNumber;
 
         return $this;
     }
 
     /**
-     * @return Collection|PlayerMaketValue[]
+     * @return Collection|PlayerMarketValue[]
      */
-    public function getPlayerMaketValues(): Collection
+    public function getPlayerMarketValues(): Collection
     {
-        return $this->playerMaketValues;
+        return $this->playerMarketValues;
     }
 
-    public function addPlayerMaketValue(PlayerMaketValue $playerMaketValue): self
+    public function addPlayerMarketValue(PlayerMarketValue $playerMarketValue): self
     {
-        if (!$this->playerMaketValues->contains($playerMaketValue)) {
-            $this->playerMaketValues[] = $playerMaketValue;
-            $playerMaketValue->setPlayer($this);
+        if (!$this->playerMarketValues->contains($playerMarketValue)) {
+            $this->playerMarketValues[] = $playerMarketValue;
+            $playerMarketValue->setPlayer($this);
         }
 
         return $this;
     }
 
-    public function removePlayerMaketValue(PlayerMaketValue $playerMaketValue): self
+    public function removePlayerMarketValue(PlayerMarketValue $playerMarketValue): self
     {
-        if ($this->playerMaketValues->contains($playerMaketValue)) {
-            $this->playerMaketValues->removeElement($playerMaketValue);
+        if ($this->playerMarketValues->contains($playerMarketValue)) {
+            $this->playerMarketValues->removeElement($playerMarketValue);
             // set the owning side to null (unless already changed)
-            if ($playerMaketValue->getPlayer() === $this) {
-                $playerMaketValue->setPlayer(null);
+            if ($playerMarketValue->getPlayer() === $this) {
+                $playerMarketValue->setPlayer(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getFullName(): ?string
+    {
+        return $this->FullName;
+    }
+
+    public function setFullName(?string $FullName): self
+    {
+        $this->FullName = $FullName;
 
         return $this;
     }

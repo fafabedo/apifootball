@@ -22,6 +22,9 @@
     "behat/transliterator": {
         "version": "v1.2.0"
     },
+    "cocur/slugify": {
+        "version": "v3.2"
+    },
     "defuse/php-encryption": {
         "version": "v2.2.1"
     },
@@ -112,6 +115,9 @@
     },
     "friendsofsymfony/user-bundle": {
         "version": "v2.1.2"
+    },
+    "gedmo/doctrine-extensions": {
+        "version": "v2.4.37"
     },
     "guzzlehttp/guzzle": {
         "version": "6.3.3"

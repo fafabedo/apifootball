@@ -2,6 +2,8 @@
 
 namespace App\Repository;
 
+use App\Entity\Competition;
+use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionSeasonTeam;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
@@ -17,6 +19,22 @@ class CompetitionSeasonTeamRepository extends ServiceEntityRepository
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, CompetitionSeasonTeam::class);
+    }
+
+    /**
+     * @param Competition $competition
+     * @param bool $archive
+     * @return mixed
+     */
+    public function findByCompetition(Competition $competition, $archive = false)
+    {
+        return $this->createQueryBuilder('cst')
+            ->innerJoin('cst.competition_season', 'cs')
+            ->where('cs.competition = :competition AND cs.archive = :archive')
+            ->setParameter('competition', $competition->getId())
+            ->setParameter('archive', $archive)
+            ->getQuery()
+            ->getResult();
     }
 
     // /**

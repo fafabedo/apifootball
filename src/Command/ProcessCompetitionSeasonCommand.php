@@ -6,6 +6,7 @@ use App\Entity\Competition;
 use App\Entity\Country;
 use App\Service\Crawler\Entity\CompetitionSeason\CompetitionSeasonCrawler;
 use App\Service\Crawler\Entity\CompetitionSeason\CompetitionSeasonMatchCrawler;
+use App\Service\Crawler\Entity\CompetitionSeason\CompetitionSeasonPlayerCrawler;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,18 +35,26 @@ class ProcessCompetitionSeasonCommand extends Command
     private $competitionSeasonMatchCrawler;
 
     /**
+     * @var CompetitionSeasonPlayerCrawler
+     */
+    private $competitionSeasonPlayerCrawler;
+
+    /**
      * ProcessCompetitionCommand constructor.
      * @param ManagerRegistry $doctrine
      * @param CompetitionSeasonCrawler $competitionSeasonCrawler
      * @param CompetitionSeasonMatchCrawler $competitionSeasonMatchCrawler
+     * @param CompetitionSeasonPlayerCrawler $competitionSeasonPlayerCrawler
      */
     public function __construct(ManagerRegistry $doctrine,
         CompetitionSeasonCrawler $competitionSeasonCrawler,
-        CompetitionSeasonMatchCrawler $competitionSeasonMatchCrawler)
+        CompetitionSeasonMatchCrawler $competitionSeasonMatchCrawler,
+        CompetitionSeasonPlayerCrawler $competitionSeasonPlayerCrawler)
     {
         $this->doctrine = $doctrine;
         $this->competitionSeasonCrawler = $competitionSeasonCrawler;
         $this->competitionSeasonMatchCrawler = $competitionSeasonMatchCrawler;
+        $this->competitionSeasonPlayerCrawler = $competitionSeasonPlayerCrawler;
         parent::__construct();
     }
 
@@ -71,6 +80,14 @@ class ProcessCompetitionSeasonCommand extends Command
     public function getCompetitionSeasonMatchCrawler(): CompetitionSeasonMatchCrawler
     {
         return $this->competitionSeasonMatchCrawler;
+    }
+
+    /**
+     * @return CompetitionSeasonPlayerCrawler
+     */
+    public function getCompetitionSeasonPlayerCrawler(): CompetitionSeasonPlayerCrawler
+    {
+        return $this->competitionSeasonPlayerCrawler;
     }
 
     /**
@@ -100,7 +117,7 @@ class ProcessCompetitionSeasonCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $io = new SymfonyStyle($input, $output);
-
+        $competition = null;
         $this
             ->getCompetitionSeasonCrawler()
             ->setOutput($output)
@@ -155,6 +172,19 @@ class ProcessCompetitionSeasonCommand extends Command
             ->saveData()
         ;
         $io->newLine();
+
+        $io->newLine();
+        $io->title('Competition Players...');
+        if ($competition instanceof Competition) {
+            $this
+                ->getCompetitionSeasonPlayerCrawler()
+                ->setCompetition($competition)
+                ->setOutput($output)
+                ->process()
+                ->saveData();
+        }
+        $io->newLine();
+
         $io->success('Competition matches have been updated successfully.');
     }
 }

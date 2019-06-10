@@ -32,14 +32,14 @@ class CountryCrawler extends ContentCrawler implements CrawlerInterface
     public function process(): CrawlerInterface
     {
         $collectionConfig = $this->getConfigManager()
-            ->getValue('country.collection.url')
+            ->getValue('crawler.country.collection.url')
         ;
 
         $countryCollection = MetadataSchemaResources::createSchema($collectionConfig);
 
         $countryItemConfig = $this
             ->getConfigManager()
-            ->getValue('country.item.url');
+            ->getValue('crawler.country.item.url');
 
         $countryItemMetadata = MetadataSchemaResources::createSchema($countryItemConfig);
 
@@ -118,7 +118,7 @@ class CountryCrawler extends ContentCrawler implements CrawlerInterface
      */
     private function processFederationAndCode()
     {
-        $countryFifaSchema = $this->getConfigSchema('country.fifa.federation.url');
+        $countryFifaSchema = $this->getConfigSchema('crawler.country.fifa.federation.url');
         $federations = $this->getDoctrine()
             ->getRepository(Federation::class)
             ->findBy(['shortname' => [

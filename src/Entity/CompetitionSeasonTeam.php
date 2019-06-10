@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -19,7 +20,7 @@ class CompetitionSeasonTeam
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="bigint")
      * @Groups({"season"})
      */
     private $id;
@@ -40,6 +41,7 @@ class CompetitionSeasonTeam
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTeamPlayer", mappedBy="competition_season_team")
      * @Groups({"season"})
+     * @ApiSubresource()
      */
     private $competitionSeasonTeamPlayers;
 

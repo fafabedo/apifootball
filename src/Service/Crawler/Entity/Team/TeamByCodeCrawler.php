@@ -58,7 +58,7 @@ class TeamByCodeCrawler extends ContentCrawler
         if ($this->getTmkCode() === null) {
             return $this;
         }
-        $teamOverview = $this->getConfigSchema('team.overview.page.url');
+        $teamOverview = $this->getConfigSchema('crawler.team.overview.page.url');
         $this->createProgressBar('Crawling team overview page', 2);
         $url = $this->preparePath($teamOverview->getUrl(), ['team', $this->getTmkCode()]);
         $this

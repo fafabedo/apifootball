@@ -186,9 +186,9 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
     public function process(): CrawlerInterface
     {
         $fixtureCollection = $this
-            ->getConfigSchema('competition.standard.fixture.collection.url');
+            ->getConfigSchema('crawler.competition.standard.fixture.collection.url');
         $fixtureCollectionTournament = $this
-            ->getConfigSchema('competition.tournament.fixture.collection.url');
+            ->getConfigSchema('crawler.competition.tournament.fixture.collection.url');
 
         $competitionSeasons = $this->getCompetitionSeasons();
         $this->createProgressBar('Crawl fixture information...', count($competitionSeasons));
@@ -254,10 +254,19 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
             ->getDoctrine()
             ->getManager();
 
+        if (empty($this->competitionMatches)) {
+            return $this;
+        }
+
         $this->createProgressBar('Saving matches information', count($this->competitionMatches));
+        $i = 0;
         foreach ($this->competitionMatches as $fixture) {
             $em->persist($fixture);
             $this->advanceProgressBar();
+            $i++;
+            if ($i%50 === 0) {
+                $em->flush();
+            }
         }
         $em->flush();
 
@@ -309,7 +318,7 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      */
     private function processFixtureLeagueHtml(CompetitionSeason $competitionSeason)
     {
-        $globalUrl = $this->getConfigSchema('global.url');
+        $globalUrl = $this->getConfigSchema('crawler.global.url');
         $tablesNode = CompetitionFixtureTool::getLeagueTableNodes($this->getCrawler());
 
         $matchStage = $this->getMatchStage(MatchStage::MATCH_STAGE_LEAGUE);
@@ -378,7 +387,7 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      */
     private function processFixtureTournamentHtml(CompetitionSeason $competitionSeason)
     {
-        $globalUrl = $this->getConfigSchema('global.url');
+        $globalUrl = $this->getConfigSchema('crawler.global.url');
         $tablesNode = CompetitionGroupsMatchDayTool::getTournamentBoxNodes($this->getCrawler());
         $matchSGroup = $this->getMatchStage('Group');
 

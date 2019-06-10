@@ -261,7 +261,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
     private function getCompetitionsEuropeUrl(): ?MetadataSchemaResources
     {
         return $this
-            ->getConfigSchema('competition.europe.collection.url');
+            ->getConfigSchema('crawler.competition.europe.collection.url');
     }
 
     /**
@@ -271,7 +271,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
     protected function getGlobalUrl(): ?MetadataSchemaResources
     {
         return $this
-            ->getConfigSchema('global.url');
+            ->getConfigSchema('crawler.global.url');
     }
 
 }

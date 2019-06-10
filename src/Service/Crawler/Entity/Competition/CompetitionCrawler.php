@@ -137,7 +137,7 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
             return $this;
         }
         $competitionItemSchema = $this
-            ->getConfigSchema('competition.item.url');
+            ->getConfigSchema('crawler.competition.item.url');
         $this->createProgressBar('Crawling country information', count($this->codes));
 
         foreach ($this->codes as $tmkCode => $country) {
@@ -226,7 +226,7 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
      */
     private function addCompetitionSeasons(Competition $competition, $compSeasons = []): Competition
     {
-        $globalSchema = $this->getConfigSchema('global.url');;
+        $globalSchema = $this->getConfigSchema('crawler.global.url');;
 
         $archive = false;
         foreach ($compSeasons as $year => $season) {
@@ -327,7 +327,7 @@ class CompetitionCrawler extends ContentCrawler implements CrawlerInterface
     public function processCodes()
     {
         $collectionSchema = $this
-            ->getConfigSchema('competition.collection.url');
+            ->getConfigSchema('crawler.competition.collection.url');
 
         $countries = $this->getCountryList();
         $this->createProgressBar('Crawling country codes', count($countries));

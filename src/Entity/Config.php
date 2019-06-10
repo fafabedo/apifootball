@@ -4,18 +4,18 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
-use App\Traits\MetadataTrait;
 use Doctrine\ORM\Mapping as ORM;
-
+use Symfony\Component\Serializer\Annotation\Groups;
 /**
  * @ApiResource()
  * @ORM\Entity(repositoryClass="App\Repository\ConfigRepository")
  * @ApiFilter(SearchFilter::class, properties={"id": "exact", "collection": "partial", "name": "partial", "data": "partial"})
+ * @ApiFilter(OrderFilter::class, properties={"name", "ASC", "collection", "ASC"})
  */
 class Config
 {
-
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -38,41 +38,72 @@ class Config
      */
     private $data;
 
-    public function getId(): ?int
+  /**
+   * @return int|null
+   * @Groups({"read"})
+   */
+  public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getCollection(): ?string
+  /**
+   * @return string|null
+   * @Groups({"read"})
+   */
+  public function getCollection(): ?string
     {
         return $this->collection;
     }
 
-    public function setCollection(?string $collection): self
+  /**
+   * @param string|null $collection
+   *
+   * @return \App\Entity\Config
+   */
+  public function setCollection(?string $collection): self
     {
         $this->collection = $collection;
 
         return $this;
     }
 
-    public function getName(): ?string
+  /**
+   * @return string|null
+   * @Groups({"read"})
+   */
+  public function getName(): ?string
     {
         return $this->name;
     }
 
-    public function setName(string $name): self
+  /**
+   * @param string $name
+   *
+   * @return \App\Entity\Config
+   */
+  public function setName(string $name): self
     {
         $this->name = $name;
 
         return $this;
     }
 
-    public function getData()
+  /**
+   * @return mixed
+   * @Groups({"read"})
+   */
+  public function getData()
     {
         return $this->data;
     }
 
-    public function setData($data): self
+  /**
+   * @param $data
+   *
+   * @return \App\Entity\Config
+   */
+  public function setData($data): self
     {
         $this->data = $data;
 

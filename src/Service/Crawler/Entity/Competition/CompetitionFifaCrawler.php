@@ -189,7 +189,7 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
     private function getCompetitionsFifaUrl(): ?string
     {
         $schema = $this
-            ->getConfigSchema('competition.fifa.collection.url');
+            ->getConfigSchema('crawler.competition.fifa.collection.url');
         if ($schema->getUrl() === null) {
             return null;
         }
@@ -203,7 +203,7 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
     private function getGlobalUrl(): ?string
     {
         $schema = $this
-            ->getConfigSchema('global.url');
+            ->getConfigSchema('crawler.global.url');
         if ($schema->getUrl() === null) {
             return null;
         }

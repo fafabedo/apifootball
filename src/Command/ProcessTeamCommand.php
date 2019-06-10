@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use App\Entity\Competition;
 use App\Entity\Country;
 use App\Service\Crawler\Entity\Team\TeamCrawler;
 use Doctrine\Common\Persistence\ManagerRegistry;
@@ -60,7 +61,7 @@ class ProcessTeamCommand extends Command
             ->setDescription('Crawl all teams in all competitions')
             ->addOption('country', null, InputOption::VALUE_OPTIONAL, 'Select country to process')
             ->addOption('level', null, InputOption::VALUE_OPTIONAL, 'Select country to process')
-        ;
+            ->addOption('competition', null, InputOption::VALUE_REQUIRED, 'Select competition');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -79,8 +80,16 @@ class ProcessTeamCommand extends Command
         if ($input->getOption('level')) {
             $level = $input->getOption('level');
         }
-
         $crawler = $this->getTeamCrawler();
+
+        if ($input->hasOption('competition')) {
+            $id = $input->getOption('competition');
+            $competition = $this->getDoctrine()
+                ->getRepository(Competition::class)
+                ->find($id);
+            $crawler->setCompetition($competition);
+        }
+
 
         if ($country instanceof Country) {
             $crawler->setCountry($country);
@@ -88,8 +97,7 @@ class ProcessTeamCommand extends Command
         $crawler->setLevel($level)
             ->setOutput($output)
             ->process()
-            ->saveData()
-        ;
+            ->saveData();
 
         $io->success('Teams have been imported successfully.');
     }

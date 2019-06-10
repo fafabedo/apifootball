@@ -28,7 +28,7 @@ class ProcessCompetitionAmericaCommand extends Command
     /**
      * ProcessCompetitionCommand constructor.
      * @param ManagerRegistry $doctrine
-     * @param CompetitionAmericaCrawler $competitionFifaCrawler
+     * @param CompetitionAmericaCrawler $competitionAmericaCrawler
      */
     public function __construct(ManagerRegistry $doctrine, CompetitionAmericaCrawler $competitionAmericaCrawler)
     {

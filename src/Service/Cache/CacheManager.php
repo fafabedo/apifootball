@@ -90,6 +90,7 @@ class CacheManager
 
     /**
      * @param $cid
+     * @param $path
      * @param $content
      * @throws \Exception
      */
@@ -98,7 +99,8 @@ class CacheManager
         $content = HtmlTool::trimHtml($content);
         $cachePage = new CachePage();
         $cachePage->setCacheId($cid);
-        $cachePage->setCollection($path);
+        $cachePage->setPathUrl($path);
+        $content = utf8_encode($content);
         $cachePage->setData($content);
         $cachePage->setExpire(false);
         $cachePage->setLifetime($this->getLifetime());

@@ -2,25 +2,25 @@
 
 namespace App\Repository;
 
-use App\Entity\PlayerMaketValue;
+use App\Entity\PlayerMarketValue;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
- * @method PlayerMaketValue|null find($id, $lockMode = null, $lockVersion = null)
- * @method PlayerMaketValue|null findOneBy(array $criteria, array $orderBy = null)
- * @method PlayerMaketValue[]    findAll()
- * @method PlayerMaketValue[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method PlayerMarketValue|null find($id, $lockMode = null, $lockVersion = null)
+ * @method PlayerMarketValue|null findOneBy(array $criteria, array $orderBy = null)
+ * @method PlayerMarketValue[]    findAll()
+ * @method PlayerMarketValue[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class PlayerMaketValueRepository extends ServiceEntityRepository
+class PlayerMarketValueRepository extends ServiceEntityRepository
 {
     public function __construct(RegistryInterface $registry)
     {
-        parent::__construct($registry, PlayerMaketValue::class);
+        parent::__construct($registry, PlayerMarketValue::class);
     }
 
     // /**
-    //  * @return PlayerMaketValue[] Returns an array of PlayerMaketValue objects
+    //  * @return PlayerMarketValue[] Returns an array of PlayerMarketValue objects
     //  */
     /*
     public function findByExampleField($value)
@@ -37,7 +37,7 @@ class PlayerMaketValueRepository extends ServiceEntityRepository
     */
 
     /*
-    public function findOneBySomeField($value): ?PlayerMaketValue
+    public function findOneBySomeField($value): ?PlayerMarketValue
     {
         return $this->createQueryBuilder('p')
             ->andWhere('p.exampleField = :val')

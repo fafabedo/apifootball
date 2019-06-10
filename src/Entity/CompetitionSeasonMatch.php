@@ -27,7 +27,7 @@ class CompetitionSeasonMatch
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="bigint")
      * @Groups({"fixture"})
      */
     private $id;

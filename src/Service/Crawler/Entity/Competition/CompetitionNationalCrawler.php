@@ -239,7 +239,7 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
      */
     private function getBaseUrl(): MetadataSchemaResources
     {
-        return $this->getConfigSchema('global.url');
+        return $this->getConfigSchema('crawler.global.url');
     }
 
     /**

@@ -2,29 +2,25 @@
 
 namespace App\Repository;
 
-use App\Entity\Competition;
-use App\Entity\Player;
-use App\Traits\TmkEntityRepositoryTrait;
+use App\Entity\ProcessQueueLog;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
- * @method Player|null find($id, $lockMode = null, $lockVersion = null)
- * @method Player|null findOneBy(array $criteria, array $orderBy = null)
- * @method Player[]    findAll()
- * @method Player[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method ProcessQueueLog|null find($id, $lockMode = null, $lockVersion = null)
+ * @method ProcessQueueLog|null findOneBy(array $criteria, array $orderBy = null)
+ * @method ProcessQueueLog[]    findAll()
+ * @method ProcessQueueLog[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class PlayerRepository extends ServiceEntityRepository
+class ProcessQueueLogRepository extends ServiceEntityRepository
 {
-    use TmkEntityRepositoryTrait;
-
     public function __construct(RegistryInterface $registry)
     {
-        parent::__construct($registry, Player::class);
+        parent::__construct($registry, ProcessQueueLog::class);
     }
 
     // /**
-    //  * @return Player[] Returns an array of Player objects
+    //  * @return ProcessQueueLog[] Returns an array of ProcessQueueLog objects
     //  */
     /*
     public function findByExampleField($value)
@@ -41,7 +37,7 @@ class PlayerRepository extends ServiceEntityRepository
     */
 
     /*
-    public function findOneBySomeField($value): ?Player
+    public function findOneBySomeField($value): ?ProcessQueueLog
     {
         return $this->createQueryBuilder('p')
             ->andWhere('p.exampleField = :val')

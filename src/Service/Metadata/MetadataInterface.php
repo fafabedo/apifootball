@@ -4,7 +4,7 @@ namespace App\Service\Metadata;
 
 interface MetadataInterface
 {
-    static public function createSchema($schema): MetadataInterface;
+    static public function createSchema($schema);
 
     public function setSchema(array $schema): MetadataInterface;
 
