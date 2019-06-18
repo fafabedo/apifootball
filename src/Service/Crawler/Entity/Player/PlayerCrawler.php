@@ -98,16 +98,22 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
      * @return PlayerCrawler
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
      */
     public function process(): CrawlerInterface
     {
         $seasonTeamPlayers = $this->getSeasonTeamPlayerList();
         $this->createProgressBar('Processing players ..', count($seasonTeamPlayers));
+        $index = 1;
         foreach ($seasonTeamPlayers as $seasonTeamPlayer) {
+            if (!$this->validOffset($index)) {
+                continue;
+            }
             $player = $seasonTeamPlayer->getPlayer();
             $player = $this->getProfileInfo($player);
             $this->players[] = $player;
             $this->advanceProgressBar();
+            $index++;
         }
         $this->finishProgressBar();
         return $this;
@@ -159,7 +165,7 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
         ;
 
         try {
-            $html = $this->getCrawler()->html();
+            $this->getCrawler()->html();
             $profileContainer = PlayerProfileTool::getContainerProfile($this->getCrawler());
             $name = PlayerProfileTool::getName($this->getCrawler());
             $jerseyNumber = PlayerProfileTool::getJerseyNumber($this->getCrawler());
@@ -192,7 +198,8 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
     }
 
     /**
-     * @return CompetitionSeasonTeamPlayer[]|mixed
+     * @return array|mixed
+     * @throws \Exception
      */
     private function getSeasonTeamPlayerList()
     {

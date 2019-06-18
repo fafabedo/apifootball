@@ -11,6 +11,7 @@ use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\Team\TeamSquadTool;
+use Cocur\Slugify\Slugify;
 
 class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerInterface
 {
@@ -18,6 +19,11 @@ class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerIn
      * @var Competition
      */
     private $competition;
+
+    /**
+     * @var bool
+     */
+    private $featured = false;
 
     /**
      * @var CompetitionSeasonTeamPlayer[]
@@ -44,23 +50,49 @@ class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerIn
     }
 
     /**
+     * @return bool
+     */
+    public function isFeatured(): bool
+    {
+        return $this->featured;
+    }
+
+    /**
+     * @param bool $featured
+     * @return CompetitionSeasonPlayerCrawler
+     */
+    public function setFeatured(bool $featured): CompetitionSeasonPlayerCrawler
+    {
+        $this->featured = $featured;
+        return $this;
+    }
+
+    /**
      * @return CrawlerInterface
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
      */
     public function process(): CrawlerInterface
     {
-        $seasonTeams = $this->getTeams();
+        $seasonTeams = $this->getTeamsToBeProcess();
+        if (empty($seasonTeams)) {
+            return $this;
+        }
         $playerCollection = $this
             ->getConfigSchema('crawler.competition.player.collection.url');
 
         $globalUrl = $this->getConfigSchema('crawler.global.url');
 
         $this->createProgressBar('Crawl players from teams...', count($seasonTeams));
-
+        $index = 1;
         foreach ($seasonTeams as $seasonTeam) {
+            if (!$this->validOffset($index)) {
+                $index++;
+                continue;
+            }
             $seasonStart = $seasonTeam->getCompetitionSeason()->getStartSeason();
             if (!$seasonStart instanceof \DateTime) {
                 $seasonStart = new \DateTime();
@@ -70,7 +102,8 @@ class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerIn
             $season = $seasonStart->format('Y');
             $team = $seasonTeam->getTeam();
 
-            $slug = 'slug';
+            $slugify = new Slugify();
+            $slug = $slugify->slugify($team->getName());
             $tmkCode = $team->getTmkCode();
             $preparedUrl = $this->preparePath($playerCollection->getUrl(), [$slug, $tmkCode, $season]);
             $this->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION_SEASON))
@@ -101,6 +134,7 @@ class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerIn
                 $this->competitionSeasonTeamPlayer[] = $competitionSeasonTeamPlayer;
             }
             $this->advanceProgressBar();
+            $index++;
         }
         $this->finishProgressBar();
         return $this;
@@ -118,27 +152,17 @@ class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerIn
             return $this;
         }
         $this->createProgressBar('Saving players...', count($this->competitionSeasonTeamPlayer));
-        $i = 0;
         foreach ($this->competitionSeasonTeamPlayer as $seasonTeamPlayer) {
             $player = $seasonTeamPlayer->getPlayer();
             $em->persist($player);
-            $i++;
-            if ($i%100 === 0) {
-                $em->flush();
-            }
             $this->advanceProgressBar();
         }
         $em->flush();
         $this->finishProgressBar();
 
         $this->createProgressBar('Saving players in season...', count($this->competitionSeasonTeamPlayer));
-        $i = 0;
         foreach ($this->competitionSeasonTeamPlayer as $seasonTeamPlayer) {
             $em->persist($seasonTeamPlayer);
-            $i++;
-            if ($i%100 === 0) {
-                $em->flush();
-            }
             $this->advanceProgressBar();
         }
         $em->flush();
@@ -148,16 +172,27 @@ class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerIn
 
     /**
      * @return CompetitionSeasonTeam[]|null
+     * @throws \Exception
      */
-    private function getTeams()
+    private function getTeamsToBeProcess()
     {
-        if ($this->getCompetition() instanceof Competition) {
-            $competition = $this->getCompetition();
-            return $this->getDoctrine()
-                ->getRepository(CompetitionSeasonTeam::class)
-                ->findByCompetition($competition);
-            }
-        return null;
+        switch(true) {
+            case ($this->isFeatured()):
+                return $this->getDoctrine()
+                    ->getRepository(CompetitionSeasonTeam::class)
+                    ->findByFeaturedCompetition();
+                break;
+            case ($this->getCompetition() instanceof Competition):
+                $competition = $this->getCompetition();
+                return $this->getDoctrine()
+                    ->getRepository(CompetitionSeasonTeam::class)
+                    ->findByCompetition($competition);
+                break;
+            default:
+                return [];
+                break;
+        }
+
     }
 
 }

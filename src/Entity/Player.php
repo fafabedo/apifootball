@@ -4,12 +4,11 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Traits\MetadataTrait;
+use App\Traits\TimestampableTrait;
 use App\Traits\TmkEntityTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use JMS\Serializer\Annotation as Serializer;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -20,6 +19,7 @@ class Player
 {
     use MetadataTrait;
     use TmkEntityTrait;
+    use TimestampableTrait;
 
     /**
      * @ORM\Id()
@@ -324,6 +324,10 @@ class Player
         return $this->playerPositions;
     }
 
+    /**
+     * @param PlayerPosition $playerPosition
+     * @return Player
+     */
     public function addPlayerPosition(PlayerPosition $playerPosition): self
     {
         if (!$this->playerPositions->contains($playerPosition)) {
@@ -334,6 +338,10 @@ class Player
         return $this;
     }
 
+    /**
+     * @param PlayerPosition $playerPosition
+     * @return Player
+     */
     public function removePlayerPosition(PlayerPosition $playerPosition): self
     {
         if ($this->playerPositions->contains($playerPosition)) {
@@ -355,6 +363,10 @@ class Player
         return $this->playerContracts;
     }
 
+    /**
+     * @param PlayerContract $playerContract
+     * @return Player
+     */
     public function addPlayerContract(PlayerContract $playerContract): self
     {
         if (!$this->playerContracts->contains($playerContract)) {
@@ -365,6 +377,10 @@ class Player
         return $this;
     }
 
+    /**
+     * @param PlayerContract $playerContract
+     * @return Player
+     */
     public function removePlayerContract(PlayerContract $playerContract): self
     {
         if ($this->playerContracts->contains($playerContract)) {
@@ -378,11 +394,18 @@ class Player
         return $this;
     }
 
+    /**
+     * @return int|null
+     */
     public function getJerseyNumber(): ?int
     {
         return $this->jerseyNumber;
     }
 
+    /**
+     * @param int|null $jerseyNumber
+     * @return Player
+     */
     public function setJerseyNumber(?int $jerseyNumber): self
     {
         $this->jerseyNumber = $jerseyNumber;
@@ -398,6 +421,10 @@ class Player
         return $this->playerMarketValues;
     }
 
+    /**
+     * @param PlayerMarketValue $playerMarketValue
+     * @return Player
+     */
     public function addPlayerMarketValue(PlayerMarketValue $playerMarketValue): self
     {
         if (!$this->playerMarketValues->contains($playerMarketValue)) {
@@ -408,6 +435,10 @@ class Player
         return $this;
     }
 
+    /**
+     * @param PlayerMarketValue $playerMarketValue
+     * @return Player
+     */
     public function removePlayerMarketValue(PlayerMarketValue $playerMarketValue): self
     {
         if ($this->playerMarketValues->contains($playerMarketValue)) {
@@ -421,15 +452,23 @@ class Player
         return $this;
     }
 
+    /**
+     * @return string|null
+     */
     public function getFullName(): ?string
     {
         return $this->FullName;
     }
 
+    /**
+     * @param string|null $FullName
+     * @return Player
+     */
     public function setFullName(?string $FullName): self
     {
         $this->FullName = $FullName;
 
         return $this;
     }
+
 }

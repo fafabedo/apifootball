@@ -84,6 +84,16 @@ abstract class ContentCrawler implements CrawlerInterface
     private $progressBar;
 
     /**
+     * @var integer
+     */
+    private $limit = 200;
+
+    /**
+     * @var integer
+     */
+    private $offset = 1;
+
+    /**
      * @var int
      */
     private $lifetime = CacheManager::DEFAULT_LIFETIME;
@@ -204,6 +214,42 @@ abstract class ContentCrawler implements CrawlerInterface
     public function setLifetime(int $lifetime): ContentCrawler
     {
         $this->lifetime = $lifetime;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLimit(): int
+    {
+        return $this->limit;
+    }
+
+    /**
+     * @param int $limit
+     * @return ContentCrawler
+     */
+    public function setLimit($limit): CrawlerInterface
+    {
+        $this->limit = $limit;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getOffset(): int
+    {
+        return $this->offset;
+    }
+
+    /**
+     * @param int $offset
+     * @return ContentCrawler
+     */
+    public function setOffset($offset): CrawlerInterface
+    {
+        $this->offset = $offset;
         return $this;
     }
 
@@ -400,7 +446,25 @@ abstract class ContentCrawler implements CrawlerInterface
         }
 
         return $metadata;
+    }
 
+    /**
+     * @param $index
+     * @return bool
+     */
+    protected function validOffset($index)
+    {
+        $limit = $this->getLimit();
+        $offset = $this->getOffset();
+        $ceiling = $offset + $limit;
+        switch(true) {
+            case ($offset <= $index && $index < $ceiling):
+                return true;
+                break;
+            default:
+                return false;
+                break;
+        }
     }
 
 }

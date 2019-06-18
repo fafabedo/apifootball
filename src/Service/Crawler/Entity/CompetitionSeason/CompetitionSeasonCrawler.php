@@ -41,15 +41,14 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
     private $competition;
 
     /**
-     * Include archive seasons?
-     * @var bool
+     * @var CompetitionSeason
      */
-    private $archive = false;
+    private $competitionSeason;
 
     /**
-     * @var int
+     * @var bool
      */
-    private $maxLevel = 1;
+    private $featured = false;
 
     /**
      * @return Country|null
@@ -90,37 +89,36 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
     /**
      * @return bool
      */
-    public function showArchive(): bool
+    public function isFeatured(): bool
     {
-        return $this->archive;
+        return $this->featured;
     }
 
     /**
-     * @param bool $archive
+     * @param bool $featured
      * @return CompetitionSeasonCrawler
      */
-    public function setShowArchive(bool $archive): CompetitionSeasonCrawler
+    public function setFeatured(bool $featured): CompetitionSeasonCrawler
     {
-        $this->archive = $archive;
+        $this->featured = $featured;
+
         return $this;
     }
 
     /**
-     * @return int
+     * @return CompetitionSeason
      */
-    public function getMaxLevel(): int
+    public function getCompetitionSeason(): ?CompetitionSeason
     {
-        return $this->maxLevel;
+        return $this->competitionSeason;
     }
 
     /**
-     * @param int $maxLevel
-     * @return CompetitionSeasonCrawler
+     * @param CompetitionSeason $competitionseason
      */
-    public function setMaxLevel(int $maxLevel): CompetitionSeasonCrawler
+    public function setCompetitionSeason(CompetitionSeason $competitionSeason): void
     {
-        $this->maxLevel = $maxLevel;
-        return $this;
+        $this->competitionSeason = $competitionSeason;
     }
 
     /**
@@ -129,12 +127,15 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
      */
     public function process(): CrawlerInterface
     {
-        $seasons = $this->getDoctrine()
+        $seasons = $this
+            ->getDoctrine()
             ->getRepository(CompetitionSeason::class)
-            ->findByCompetition($this->getCompetition());
+            ->findByConfiguration($this->getCompetition(), $this->getCompetitionSeason(), $this->isFeatured());
+
         $this->createProgressBar('Processing competition seasons', count($seasons));
         foreach ($seasons as $competitionSeason) {
             $metadata = $competitionSeason->getMetadata();
@@ -146,6 +147,7 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
                 $this
                     ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION_SEASON))
                     ->processPath($schema->getUrl());
+                $this->getCrawler()->html();
                 $competitionType = $competitionSeason
                     ->getCompetition()
                     ->getCompetitionType()
@@ -164,6 +166,8 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
                 $this->getOutput()->writeln('Invalid Schema: ');
                 $this->getOutput()->writeln($competitionSeason->getId());
                 $this->getOutput()->writeln($metadata);
+            } catch (\Exception $e) {
+                throw new \Exception('Error '. __CLASS__ . ' id: ' . $competitionSeason->getId());
             }
             $this->advanceProgressBar();
         }
@@ -203,46 +207,6 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
         $em->flush();
         $this->finishProgressBar();
         return $this;
-    }
-
-    /**
-     * @return
-     */
-    private function getCompetitionSeasons()
-    {
-        $filter = ['archive' => $this->showArchive()];
-        switch (true) {
-            case ($this->getCompetition() instanceof Competition):
-                $filter['competition'] = $this->getCompetition();
-                break;
-            case ($this->getCountry() instanceof Country):
-                $levels = [];
-                for($i=1; $i<=$this->getMaxLevel();$i++) {
-                    $levels[]=$i;
-                }
-                $competitions = $this
-                    ->getDoctrine()
-                    ->getRepository(Competition::class)
-                    ->findBy(['country' => $this->getCountry(), 'league_level' => $levels]);
-                $filter['competition'] = $competitions;
-                break;
-            default:
-                $levels = [];
-                for($i=1; $i<=$this->getMaxLevel();$i++) {
-                    $levels[]=$i;
-                }
-                $competitions = $this
-                    ->getDoctrine()
-                    ->getRepository(Competition::class)
-                    ->findBy(['league_level' => $levels]);
-                $filter['competition'] = $competitions;
-                break;
-        }
-
-        return $this
-            ->getDoctrine()
-            ->getRepository(CompetitionSeason::class)
-            ->findBy($filter);
     }
 
     /**
@@ -404,6 +368,5 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
         $em->flush();
         return $this;
     }
-
 
 }

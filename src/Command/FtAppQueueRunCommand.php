@@ -39,26 +39,23 @@ class FtAppQueueRunCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Add a short description for your command')
-            ->addArgument('arg1', InputArgument::OPTIONAL, 'Argument description')
-            ->addOption('option1', null, InputOption::VALUE_OPTIONAL, 'Option description')
+            ->setDescription('Execute pending process in Queue')
         ;
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|void|null
+     * @throws \App\Exception\InvalidCrawlerProcess
+     * @throws \App\Exception\InvalidMetadataSchema
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $io = new SymfonyStyle($input, $output);
-        $arg1 = $input->getArgument('arg1');
-
-        if ($arg1) {
-            $io->note(sprintf('You passed an argument: %s', $arg1));
-        }
-
-        if ($input->getOption('option1')) {
-            // ...
-        }
 
         $this->getProcessQueueRunner()
+            ->setIo($io)
             ->process();
 
         $io->success('Processes have been executed successfully');

@@ -2,11 +2,19 @@
 
 namespace App\Tool\FifaSite;
 
-use App\Tool\FederationTool;
 use Symfony\Component\DomCrawler\Crawler;
 
+/**
+ * Class FifaSiteFederationTool
+ * @package App\Tool\FifaSite
+ */
 class FifaSiteFederationTool
 {
+    /**
+     * @param Crawler $node
+     * @param array $federationCountries
+     * @return array
+     */
     static public function getFederationCountries(Crawler $node, $federationCountries = [])
     {
         $names = $node->filter('span.fi-a__nText')->each(function (Crawler $node) {
@@ -21,6 +29,11 @@ class FifaSiteFederationTool
         return $federationCountries;
     }
 
+    /**
+     * @param $federationCountries
+     * @param $countryName
+     * @return int|string|null
+     */
     static public function getCodeByCountryName($federationCountries, $countryName)
     {
         $pattern = array("'é'", "'è'", "'ë'", "'ê'", "'É'", "'È'", "'Ë'", "'Ê'", "'á'", "'à'", "'ä'", "'â'", "'å'", "'Á'", "'À'", "'Ä'", "'Â'", "'Å'", "'ó'", "'ò'", "'ö'", "'ô'", "'Ó'", "'Ò'", "'Ö'", "'Ô'", "'í'", "'ì'", "'ï'", "'î'", "'Í'", "'Ì'", "'Ï'", "'Î'", "'ú'", "'ù'", "'ü'", "'û'", "'Ú'", "'Ù'", "'Ü'", "'Û'", "'ý'", "'ÿ'", "'Ý'", "'ø'", "'Ø'", "'œ'", "'Œ'", "'Æ'", "'ç'", "'Ç'");
@@ -37,8 +50,5 @@ class FifaSiteFederationTool
         }
         return null;
     }
-
-
-
 
 }

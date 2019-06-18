@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use App\Traits\TimestampableTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,9 +14,10 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class ProcessQueue
 {
-    public const PROCESS_QUEUE_PENDING = 'pending';
-    public const PROCESS_QUEUE_PROCESSED = 'processed';
-    public const PROCESS_QUEUE_SCHEDULED = 'scheduled';
+    use TimestampableTrait;
+
+    public const TYPE_RECURRING = 'recurring';
+    public const TYPE_ONCE = 'once';
 
     /**
      * @ORM\Id()
@@ -23,6 +25,11 @@ class ProcessQueue
      * @ORM\Column(type="integer")
      */
     private $id;
+
+    /**
+     * @ORM\Column(type="string", length=50)
+     */
+    private $type;
 
     /**
      * @ORM\Column(type="string", length=255)
@@ -35,36 +42,48 @@ class ProcessQueue
     private $parameter = [];
 
     /**
-     * @ORM\Column(type="string", length=20)
-     */
-    private $status;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
-    private $created;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
-    private $processed;
-
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ProcessQueueLog", mappedBy="processQueue", orphanRemoval=true, cascade={"persist"})
-     */
-    private $processQueueLogs;
-
-    /**
      * @ORM\Column(type="bigint", nullable=true)
      */
-    private $frecuency;
+    private $frequency;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ProcessQueueOperation", mappedBy="processQueue", orphanRemoval=true, cascade={"persist", "remove"})
+     */
+    private $processQueueOperations;
 
     /**
      * ProcessQueue constructor.
      */
     public function __construct()
     {
-        $this->processQueueLogs = new ArrayCollection();
+        $this->processQueueOperations = new ArrayCollection();
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param string $type
+     * @return ProcessQueue
+     */
+    public function setType(string $type): self
+    {
+        $this->type = $type;
+
+        return $this;
     }
 
     /**
@@ -106,109 +125,59 @@ class ProcessQueue
     }
 
     /**
-     * @return string|null
+     * @return int|null
      */
-    public function getStatus(): ?string
+    public function getFrequency(): ?int
     {
-        return $this->status;
+        return $this->frequency;
     }
 
     /**
-     * @param string $status
+     * @param int|null $frequency
      * @return ProcessQueue
      */
-    public function setStatus(string $status): self
+    public function setFrequency(?int $frequency): self
     {
-        $this->status = $status;
+        $this->frequency = $frequency;
 
         return $this;
     }
 
     /**
-     * @return \DateTimeInterface|null
+     * @return Collection|ProcessQueueOperation[]
      */
-    public function getCreated(): ?\DateTimeInterface
+    public function getProcessQueueOperations(): Collection
     {
-        return $this->created;
+        return $this->processQueueOperations;
     }
 
     /**
-     * @param \DateTimeInterface|null $created
+     * @param ProcessQueueOperation $processQueueOperation
      * @return ProcessQueue
      */
-    public function setCreated(?\DateTimeInterface $created): self
+    public function addProcessQueueOperation(ProcessQueueOperation $processQueueOperation): self
     {
-        $this->created = $created;
-
-        return $this;
-    }
-
-    /**
-     * @return \DateTimeInterface|null
-     */
-    public function getProcessed(): ?\DateTimeInterface
-    {
-        return $this->processed;
-    }
-
-    /**
-     * @param \DateTimeInterface|null $processed
-     * @return ProcessQueue
-     */
-    public function setProcessed(?\DateTimeInterface $processed): self
-    {
-        $this->processed = $processed;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection|ProcessQueueLog[]
-     */
-    public function getProcessQueueLogs(): Collection
-    {
-        return $this->processQueueLogs;
-    }
-
-    /**
-     * @param ProcessQueueLog $processQueueLog
-     * @return ProcessQueue
-     */
-    public function addProcessQueueLog(ProcessQueueLog $processQueueLog): self
-    {
-        if (!$this->processQueueLogs->contains($processQueueLog)) {
-            $this->processQueueLogs[] = $processQueueLog;
-            $processQueueLog->setProcessQueue($this);
+        if (!$this->processQueueOperations->contains($processQueueOperation)) {
+            $this->processQueueOperations[] = $processQueueOperation;
+            $processQueueOperation->setProcessQueue($this);
         }
 
         return $this;
     }
 
     /**
-     * @param ProcessQueueLog $processQueueLog
+     * @param ProcessQueueOperation $processQueueOperation
      * @return ProcessQueue
      */
-    public function removeProcessQueueLog(ProcessQueueLog $processQueueLog): self
+    public function removeProcessQueueOperation(ProcessQueueOperation $processQueueOperation): self
     {
-        if ($this->processQueueLogs->contains($processQueueLog)) {
-            $this->processQueueLogs->removeElement($processQueueLog);
+        if ($this->processQueueOperations->contains($processQueueOperation)) {
+            $this->processQueueOperations->removeElement($processQueueOperation);
             // set the owning side to null (unless already changed)
-            if ($processQueueLog->getProcessQueue() === $this) {
-                $processQueueLog->setProcessQueue(null);
+            if ($processQueueOperation->getProcessQueue() === $this) {
+                $processQueueOperation->setProcessQueue(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getFrecuency(): ?int
-    {
-        return $this->frecuency;
-    }
-
-    public function setFrecuency(?int $frecuency): self
-    {
-        $this->frecuency = $frecuency;
 
         return $this;
     }

@@ -25,14 +25,38 @@ class CompetitionSeasonTeamRepository extends ServiceEntityRepository
      * @param Competition $competition
      * @param bool $archive
      * @return mixed
+     * @throws \Exception
      */
     public function findByCompetition(Competition $competition, $archive = false)
     {
         return $this->createQueryBuilder('cst')
+            ->select('cst')
             ->innerJoin('cst.competition_season', 'cs')
+            ->leftJoin('cst.competitionSeasonTeamPlayers', 'cstp', 'WITH', 'cstp.updated < :date_interval')
+            ->leftJoin('cstp.player', 'p', 'WITH', 'p.updated < :date_interval')
             ->where('cs.competition = :competition AND cs.archive = :archive')
             ->setParameter('competition', $competition->getId())
             ->setParameter('archive', $archive)
+            ->setParameter('date_interval', new \DateTime('-2 days'))
+            ->orderBy('cst.id', 'asc')
+            ->distinct()
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findByFeaturedCompetition($archive = false)
+    {
+        return $this->createQueryBuilder('cst')
+            ->innerJoin('cst.competition_season', 'cs')
+            ->innerJoin('cs.competition', 'c')
+            ->leftJoin('cst.competitionSeasonTeamPlayers', 'cstp')
+            ->leftJoin('cstp.player', 'p')
+            ->where('c.isFeatured = :featured')
+            ->andWhere('cs.archive = :archive')
+            ->setParameter('featured', true)
+            ->setParameter('archive', $archive)
+            ->orderBy('cst.id', 'asc')
+            ->distinct()
             ->getQuery()
             ->getResult();
     }

@@ -22,19 +22,67 @@ class CompetitionSeasonRepository extends ServiceEntityRepository
 
     /**
      * @param Competition $competition
-     * @param bool $onlyActive
+     * @param bool $archive
      * @return CompetitionSeason[]
      */
-    public function findByCompetition(Competition $competition, $onlyActive = true)
+    public function findByCompetition(Competition $competition, $archive = false)
     {
-        $filters = [
-            'competition' => $competition
-        ];
-        if ($onlyActive === false) {
-            $filters['archive'] = true;
+        return $this->createQueryBuilder('cs')
+            ->select('cs')
+            ->innerJoin('cs.competition', 'c')
+            ->where('cs.competition = :competition')
+            ->andWhere('cs.archive = :archive')
+            ->setParameter('competition', $competition)
+            ->setParameter('archive', $archive)
+            ->distinct()
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param bool $archive
+     * @return mixed
+     */
+    public function findAllCompetitionFeatured($archive = false)
+    {
+        return $this->createQueryBuilder('cs')
+            ->select('cs')
+            ->innerJoin('cs.competition', 'c')
+            ->where('c.isFeatured = :featured')
+            ->andWhere('cs.archive = :archive')
+            ->setParameter('featured', true)
+            ->setParameter('archive', $archive)
+            ->distinct()
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param Competition $competition
+     * @param CompetitionSeason $competitionSeason
+     * @param $featured
+     * @return CompetitionSeason[]|mixed
+     * @throws \Exception
+     */
+    public function findByConfiguration(
+        Competition $competition = null,
+        CompetitionSeason $competitionSeason = null,
+        $featured = false
+    ) {
+        switch (true) {
+            case ($featured):
+                return $this->findAllCompetitionFeatured();
+                break;
+            case ($competition instanceof Competition):
+                return $this->findByCompetition($competition);
+                break;
+            case ($competitionSeason instanceof CompetitionSeason):
+                return $this->findBy(['id' => $competitionSeason]);
+                break;
+            default:
+                return [];
+                break;
         }
-        return $this
-            ->findBy($filters);
     }
 
     // /**

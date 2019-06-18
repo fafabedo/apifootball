@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\ProcessQueue;
+use App\Entity\ProcessQueueOperation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
@@ -25,8 +26,15 @@ class ProcessQueueRepository extends ServiceEntityRepository
     public function findPendingProcess()
     {
         return $this->createQueryBuilder('pq')
-            ->where('pq.status in (:status)')
-            ->setParameter('status', [ProcessQueue::PROCESS_QUEUE_PENDING, ProcessQueue::PROCESS_QUEUE_SCHEDULED])
+            ->select('pq')
+            ->innerJoin('pq.processQueueOperations', 'pqo')
+            ->where('pqo.status in (:status)')
+            ->setParameter('status', [
+                ProcessQueueOperation::STATUS_ONGOING,
+                ProcessQueueOperation::STATUS_PENDING
+            ])
+            ->distinct()
+            ->orderBy('pq.id', 'asc')
             ->getQuery()
             ->getResult();
     }
@@ -37,11 +45,10 @@ class ProcessQueueRepository extends ServiceEntityRepository
      */
     public function deleteProcessedOlderThan(\DateTime $datetime)
     {
-        return $this->createQueryBuilder()
-            ->delete('ProcessQueue', 'pq')
+        return $this->getEntityManager()->createQueryBuilder()
+            ->delete(ProcessQueue::class, 'pq')
             ->where('pq.status = :processed')
             ->andWhere('pq.processed < :datetime')
-            ->setParameter('processed', ProcessQueue::PROCESS_QUEUE_PROCESSED)
             ->setParameter('datetime', $datetime)
             ->getQuery()
             ->getResult();

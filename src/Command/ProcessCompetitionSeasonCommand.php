@@ -100,7 +100,7 @@ class ProcessCompetitionSeasonCommand extends Command
             ->addOption('force', null, InputOption::VALUE_OPTIONAL, 'Force match updates', false)
             ->addOption('country', null, InputOption::VALUE_REQUIRED, 'Filter by country')
             ->addOption('competition', null, InputOption::VALUE_REQUIRED, 'Filter by competition')
-            ->addOption('archive', null, InputOption::VALUE_OPTIONAL, 'Include past season', false)
+            ->addOption('featured', null, InputOption::VALUE_OPTIONAL, 'All featured competition', false)
         ;
     }
 
@@ -150,23 +150,24 @@ class ProcessCompetitionSeasonCommand extends Command
                 ->setCompetition($competition);
         }
 
-        $archive = $input->hasOption('archive');
+        $featured = $input->hasOption('featured');
         $force = $input->hasOption('force');
 
         $io->title('Competition Seasons...');
-        $competitionSeasons = $this
+        $this
             ->getCompetitionSeasonCrawler()
-            ->setShowArchive($archive)
+            ->setCompetition($competition)
+//            ->setFeatured($featured)
             ->process()
             ->saveData()
-            ->getData()
         ;
 
         $io->newLine();
         $io->title('Competition Fixture...');
         $this
             ->getCompetitionSeasonMatchCrawler()
-            ->setSeasons($competitionSeasons)
+            ->setCompetition($competition)
+//            ->setFeatured($featured)
             ->setForceUpdate($force)
             ->process()
             ->saveData()
@@ -175,10 +176,11 @@ class ProcessCompetitionSeasonCommand extends Command
 
         $io->newLine();
         $io->title('Competition Players...');
-        if ($competition instanceof Competition) {
+        if (false && $competition instanceof Competition) {
             $this
                 ->getCompetitionSeasonPlayerCrawler()
-                ->setCompetition($competition)
+//                ->setCompetition($competition)
+                ->setFeatured($featured)
                 ->setOutput($output)
                 ->process()
                 ->saveData();

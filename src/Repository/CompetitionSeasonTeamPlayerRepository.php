@@ -40,19 +40,32 @@ class CompetitionSeasonTeamPlayerRepository extends ServiceEntityRepository
 
     }
 
+    /**
+     * @param Competition $competition
+     * @param bool $archive
+     * @return mixed
+     * @throws \Exception
+     */
     public function findByCompetition(Competition $competition, $archive = false)
     {
         return $this->createQueryBuilder('cstp')
             ->innerJoin('cstp.player', 'p')
             ->innerJoin('cstp.competition_season_team', 'cst')
             ->innerJoin('cst.competition_season', 'cs')
-            ->where('cs.competition = :competition AND cs.archive = :archive')
+            ->where('cs.competition = :competition')
+            ->andWhere('cs.archive = :archive')
             ->setParameter('competition', $competition)
             ->setParameter('archive', $archive)
+            ->orderBy('cstp.id', 'asc')
             ->getQuery()
             ->getResult();
     }
 
+    /**
+     * @param CompetitionSeason $competitionSeason
+     * @return mixed
+     * @throws \Exception
+     */
     public function findByCompetitionSeason(CompetitionSeason $competitionSeason)
     {
         return $this->createQueryBuilder('cstp')
@@ -61,10 +74,17 @@ class CompetitionSeasonTeamPlayerRepository extends ServiceEntityRepository
             ->innerJoin('cst.competition_season', 'cs')
             ->where('cst.competition_season = :competition_season')
             ->setParameter('competition_season', $competitionSeason)
+            ->orderBy('cstp.id', 'asc')
             ->getQuery()
             ->getResult();
     }
 
+    /**
+     * @param Team $team
+     * @param bool $archive
+     * @return mixed
+     * @throws \Exception
+     */
     public function findByTeam(Team $team, $archive = false)
     {
         return $this->createQueryBuilder('cstp')
@@ -74,6 +94,7 @@ class CompetitionSeasonTeamPlayerRepository extends ServiceEntityRepository
             ->where('cst.team = :team AND cs.archive = :archive')
             ->setParameter('team', $team)
             ->setParameter('archive', $archive)
+            ->orderBy('cstp.id', 'asc')
             ->getQuery()
             ->getResult();
     }
