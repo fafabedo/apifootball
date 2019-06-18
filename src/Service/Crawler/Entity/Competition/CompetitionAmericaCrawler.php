@@ -122,7 +122,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
                 ->setUrl($url);
             $competition->setMetadata($schema->getSchema());
 
-            // Competition Season
+            /* Add Competition Season */
             if ($competition->getCompetitionSeasons()->count() === 0) {
                 $competitionSeason = new CompetitionSeason();
                 $competitionSeason->setArchive(false);

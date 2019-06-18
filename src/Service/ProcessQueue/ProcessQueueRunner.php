@@ -118,6 +118,9 @@ class ProcessQueueRunner
             }
             $processOperation = $this->getProcessOperation($processQueue);
             if (!$this->isLastExecutionBeforeTimeInterval($processOperation)) {
+                if ($this->getIo() instanceof SymfonyStyle) {
+                    $this->getIo()->success('PID ('.$processQueue->getId().') skipped');
+                }
                 continue;
             }
             $this
