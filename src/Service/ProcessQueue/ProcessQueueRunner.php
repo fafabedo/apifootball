@@ -161,7 +161,7 @@ class ProcessQueueRunner
                     ->getProcessQueueManager()
                     ->log($processOperation, $e->getMessage(), ProcessQueueLog::TYPE_ERROR);
                 if ($this->getIo() instanceof SymfonyStyle) {
-                    $this->getIo()->error('PID ('.$processQueue->getId().') threw an error: ' . $e->getMessage());
+                    $this->getIo()->error('PID ('.$processQueue->getId().') threw an error: '.$e->getMessage());
                 }
             }
 
@@ -251,7 +251,9 @@ class ProcessQueueRunner
         $processQueue = $processQueueOperation->getProcessQueue();
         switch (true) {
             case ($processQueueOperation->getStatus() === ProcessQueueOperation::STATUS_ONGOING):
-            case ($processQueueOperation->getCreated()->getTimestamp() === $processQueue->getCreated()->getTimestamp()):
+            case ($processQueueOperation->getStatus() === ProcessQueueOperation::STATUS_PENDING
+                && $processQueueOperation->getCreated()->getTimestamp() === $processQueue->getCreated()->getTimestamp(
+                )):
                 return true;
                 break;
             case ($processQueueOperation->getStatus() === ProcessQueueOperation::STATUS_PENDING):
