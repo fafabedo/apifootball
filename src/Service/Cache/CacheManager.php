@@ -92,15 +92,22 @@ class CacheManager
      * @param $cid
      * @param $path
      * @param $content
+     * @return CacheManager
      * @throws \Exception
      */
-    public function setPageCache($cid, $path, $content): void
+    public function setPageCache($cid, $path, $content)
     {
+        if ($content === null) {
+            return $this;
+        }
         $content = HtmlTool::trimHtml($content);
         $cachePage = new CachePage();
         $cachePage->setCacheId($cid);
         $cachePage->setPathUrl($path);
-        $content = utf8_encode($content);
+        $encoding = mb_detect_encoding($content);
+        if ($encoding !== 'UTF-8') {
+            $content = utf8_encode($content);
+        }
         $cachePage->setData($content);
         $cachePage->setExpire(false);
         $cachePage->setLifetime($this->getLifetime());
@@ -109,5 +116,6 @@ class CacheManager
         $em = $this->getDoctrine()->getManager();
         $em->persist($cachePage);
         $em->flush();
+        return $this;
     }
 }

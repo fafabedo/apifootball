@@ -17,4 +17,6 @@ interface CrawlerInterface
     public function getData();
 
     public function saveData();
+
+    public function isCompleted(): bool ;
 }

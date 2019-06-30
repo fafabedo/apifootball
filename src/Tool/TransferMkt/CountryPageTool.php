@@ -2,6 +2,7 @@
 
 namespace App\Tool\TransferMkt;
 
+use App\Service\Crawler\Item\EntityElement;
 use Symfony\Component\DomCrawler\Crawler;
 
 class CountryPageTool
@@ -23,10 +24,10 @@ class CountryPageTool
             }
             $title = trim($node->children()->text());
             if (!empty($url)) {
-                return [
-                    'url' => $url,
-                    'name' => trim($title, chr(0xC2).chr(0xA0)),
-                ];
+                $entityElement = new EntityElement();
+                $entityElement->setUrl($url);
+                $entityElement->setName(trim($title, chr(0xC2).chr(0xA0)));
+                return $entityElement;
             }
         });
         return $list;

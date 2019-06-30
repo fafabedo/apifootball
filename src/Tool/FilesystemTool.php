@@ -13,6 +13,9 @@ class FilesystemTool
 {
     public const PUBLIC_FILES_FOLDER = '/public/files';
     public const DEFAULT_EXT = 'jpg';
+    public const SOURCE = 'source';
+    public const DESTINATION = 'destination';
+
     /**
      * @param $url
      * @param $destination
@@ -75,5 +78,21 @@ class FilesystemTool
         return $rootFolder
             . self::PUBLIC_FILES_FOLDER
             . self::getFilename($subdirectory, $filename, $ext);
+    }
+
+    /**
+     * @param array $collection
+     * @param $value
+     * @param string $type
+     * @return int|false
+     */
+    static public function findIndexByFilename(array $collection, $value, $type = self::DESTINATION)
+    {
+        foreach ($collection as $index => $item) {
+            if ($item[$type] === $value) {
+                return $index;
+            }
+        }
+        return false;
     }
 }

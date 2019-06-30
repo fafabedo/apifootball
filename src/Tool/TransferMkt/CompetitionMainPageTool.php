@@ -19,7 +19,10 @@ class CompetitionMainPageTool
         if ($profileNode->count() < 1) {
             return $node->filter('h1')->text();
         }
-        return $profileNode->html();
+        $html = $profileNode->html();
+        $encoding = utf8_decode($html);
+
+        return utf8_decode($html);
     }
 
     /**
@@ -61,6 +64,7 @@ class CompetitionMainPageTool
                 $level = 5;
                 break;
         }
+
         return $level;
     }
 
@@ -82,6 +86,7 @@ class CompetitionMainPageTool
         if (isset($matches[1])) {
             $teams = (int)$matches[1];
         }
+
         return $teams;
     }
 
@@ -100,6 +105,7 @@ class CompetitionMainPageTool
         if (isset($matches[1])) {
             return $matches[1];
         }
+
         return null;
     }
 
@@ -111,38 +117,47 @@ class CompetitionMainPageTool
     {
         $teams = $node
             ->filterXPath('//*[@id="yw1"]//tbody//tr')
-            ->each(function (Crawler $node) {
-                $href = $node
-                    ->each(function (Crawler $nodeChild, $i) {
-                        $filtered = $nodeChild->filter('td')->html();
-                        preg_match('/href="([a-zA-Z0-9|%|_|\/|-]+)"/i', $filtered, $matches);
-                        if (!isset($matches[1])) {
-                            return '';
-                        }
-                        return $matches[1];
-                    });
+            ->each(
+                function (Crawler $node) {
+                    $href = $node
+                        ->each(
+                            function (Crawler $nodeChild, $i) {
+                                $filtered = $nodeChild->filter('td')->html();
+                                preg_match('/href="([a-zA-Z0-9|%|_|\/|-]+)"/i', $filtered, $matches);
+                                if (!isset($matches[1])) {
+                                    return '';
+                                }
 
-                $url = $href[0];
-                $names = $node->filterXPath('//a')
-                    ->each(function (Crawler $nodeChild, $i) {
-                        return $nodeChild->text();
-                    });
-                $name = [];
-                foreach ($names as $text) {
-                    if (!empty($text)) {
-                        $name[] = $text;
+                                return $matches[1];
+                            }
+                        );
+
+                    $url = $href[0];
+                    $names = $node->filterXPath('//a')
+                        ->each(
+                            function (Crawler $nodeChild, $i) {
+                                return $nodeChild->text();
+                            }
+                        );
+                    $name = [];
+                    foreach ($names as $text) {
+                        if (!empty($text)) {
+                            $name[] = $text;
+                        }
+                        if (count($name) == 2) {
+                            break;
+                        }
                     }
-                    if (count($name) == 2) {
-                        break;
-                    }
+                    preg_match('/([^\/]+)\/[^\/]+\/[^\/]+$/', $url, $codeMatches);
+
+                    return [
+                        'url' => $url,
+                        'name' => $name[0],
+                        'shortname' => $name[1],
+                    ];
                 }
-                preg_match('/([^\/]+)\/[^\/]+\/[^\/]+$/', $url, $codeMatches);
-                return [
-                    'url' => $url,
-                    'name' => $name[0],
-                    'shortname' => $name[1],
-                ];
-            });
+            );
+
         return $teams;
     }
 
@@ -161,6 +176,7 @@ class CompetitionMainPageTool
         if (!preg_match('/Type\sof\scup/', $dataHtml)) {
             return self::LEAGUE;
         }
+
         return self::TOURNAMENT;
     }
 
@@ -179,7 +195,40 @@ class CompetitionMainPageTool
         if (!preg_match('/youth/i', $dataHtml)) {
             return false;
         }
+
         return true;
 
+    }
+
+    /**
+     * @param Crawler $node
+     * @return Crawler
+     */
+    static public function getSeasonOptions(Crawler $node)
+    {
+        return $node->filter('div.content')
+                ->filter('select.chzn-select')
+                ->filter('option')
+            ;
+    }
+
+    /**
+     * @param $optionNode
+     * @return array|null
+     * @throws \Exception
+     */
+    static public function getDates(Crawler $optionNode)
+    {
+        $year = $optionNode->attr('value');
+        $value = $optionNode->html();
+        $startsDate = new \DateTime();
+        $endsDate = new \DateTime();
+        $startsDate->setDate($year, 1, 1);
+        $endsDate->setDate($year, 12, 31);
+        if (preg_match('/([0-9]+)\/([0-9]+)/', $value, $yearsMatches)) {
+            $startsDate->setDate(($year - 1), 8, 1);
+            $endsDate->setDate($year, 6, 30);
+        }
+        return [$startsDate, $endsDate];
     }
 }

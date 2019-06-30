@@ -3,13 +3,21 @@
 
 namespace App\Service\Crawler;
 
+use App\Entity\Config;
+use App\Entity\ProcessQueueMedia;
 use App\Service\Cache\CacheLifetime;
 use App\Service\Cache\CacheManager;
 use App\Service\Config\ConfigManager;
+use App\Service\Crawler\Entity\Team\TeamByCodeCrawler;
+use App\Service\Media\MediaManager;
+use App\Service\Metadata\MetadataSchemaQueue;
 use App\Service\Metadata\MetadataSchemaResources;
+use App\Service\ProcessQueue\ProcessQueueMediaManager;
 use App\Service\Request\RequestService;
+use App\Tool\UrlTool;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -22,6 +30,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  */
 abstract class ContentCrawler implements CrawlerInterface
 {
+    const PROCESS_QUEUE_CRAWLER = 'processqueue.crawler.file.import';
 
     /**
      * @var string
@@ -37,6 +46,11 @@ abstract class ContentCrawler implements CrawlerInterface
      * @var Crawler
      */
     private $crawler;
+
+    /**
+     * @var ContainerInterface
+     */
+    private $container;
 
     /**
      * @var ManagerRegistry
@@ -62,6 +76,16 @@ abstract class ContentCrawler implements CrawlerInterface
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
+
+    /**
+     * @var MediaManager
+     */
+    private $mediaManager;
+
+    /**
+     * @var ProcessQueueMediaManager
+     */
+    private $processQueueMediaManager;
 
     /**
      * @var string
@@ -94,12 +118,18 @@ abstract class ContentCrawler implements CrawlerInterface
     private $offset = 1;
 
     /**
+     * @var bool
+     */
+    private $isCompleted = false;
+
+    /**
      * @var int
      */
     private $lifetime = CacheManager::DEFAULT_LIFETIME;
 
     /**
      * ContentCrawler constructor.
+     * @param ContainerInterface $container
      * @param ManagerRegistry $doctrine
      * @param ConfigManager $configManager
      * @param RequestService $requestService
@@ -107,27 +137,43 @@ abstract class ContentCrawler implements CrawlerInterface
      * @param MetadataSchemaResources $metadataSchema
      * @param CacheLifetime $cacheLifetime
      * @param EventDispatcherInterface $eventDispatcher
+     * @param MediaManager $mediaManager
+     * @param ProcessQueueMediaManager $processQueueMediaManager
      */
-    public function __construct(ManagerRegistry $doctrine,
+    public function __construct(
+        ContainerInterface $container,
+        ManagerRegistry $doctrine,
         ConfigManager $configManager,
         RequestService $requestService,
         KernelInterface $kernel,
         MetadataSchemaResources $metadataSchema,
         CacheLifetime $cacheLifetime,
-        EventDispatcherInterface $eventDispatcher)
-    {
+        EventDispatcherInterface $eventDispatcher,
+        MediaManager $mediaManager,
+        ProcessQueueMediaManager $processQueueMediaManager
+    ) {
+        $this->container = $container;
         $this->doctrine = $doctrine;
         $this->configManager = $configManager;
         $this->requestService = $requestService;
         $this->metadataSchema = $metadataSchema;
         $this->cacheLifetime = $cacheLifetime;
         $this->eventDispatcher = $eventDispatcher;
+        $this->mediaManager = $mediaManager;
+        $this->processQueueMediaManager = $processQueueMediaManager;
         $this->rootFolder = $kernel->getProjectDir();
         $this->crawler = new Crawler();
     }
 
+    /**
+     * @return ContainerInterface
+     */
+    protected function getContainer(): ContainerInterface
+    {
+        return $this->container;
+    }
 
-    public function getDoctrine()
+    protected function getDoctrine()
     {
         return $this->doctrine;
     }
@@ -135,7 +181,7 @@ abstract class ContentCrawler implements CrawlerInterface
     /**
      * @return ConfigManager
      */
-    public function getConfigManager(): ConfigManager
+    protected function getConfigManager(): ConfigManager
     {
         return $this->configManager;
     }
@@ -143,7 +189,7 @@ abstract class ContentCrawler implements CrawlerInterface
     /**
      * @return RequestService
      */
-    public function getRequestService(): RequestService
+    protected function getRequestService(): RequestService
     {
         return $this->requestService;
     }
@@ -160,7 +206,7 @@ abstract class ContentCrawler implements CrawlerInterface
     /**
      * @return CacheLifetime
      */
-    public function getCacheLifetime(): CacheLifetime
+    protected function getCacheLifetime(): CacheLifetime
     {
         return $this->cacheLifetime;
     }
@@ -168,9 +214,25 @@ abstract class ContentCrawler implements CrawlerInterface
     /**
      * @return EventDispatcherInterface
      */
-    public function getEventDispatcher(): EventDispatcherInterface
+    protected function getEventDispatcher(): EventDispatcherInterface
     {
         return $this->eventDispatcher;
+    }
+
+    /**
+     * @return MediaManager
+     */
+    protected function getMediaManager(): MediaManager
+    {
+        return $this->mediaManager;
+    }
+
+    /**
+     * @return ProcessQueueMediaManager
+     */
+    protected function getProcessQueueMediaManager(): ProcessQueueMediaManager
+    {
+        return $this->processQueueMediaManager;
     }
 
     /**
@@ -188,6 +250,7 @@ abstract class ContentCrawler implements CrawlerInterface
     public function setOutput(OutputInterface $output): ContentCrawler
     {
         $this->output = $output;
+
         return $this;
     }
 
@@ -214,6 +277,7 @@ abstract class ContentCrawler implements CrawlerInterface
     public function setLifetime(int $lifetime): ContentCrawler
     {
         $this->lifetime = $lifetime;
+
         return $this;
     }
 
@@ -232,6 +296,7 @@ abstract class ContentCrawler implements CrawlerInterface
     public function setLimit($limit): CrawlerInterface
     {
         $this->limit = $limit;
+
         return $this;
     }
 
@@ -250,7 +315,24 @@ abstract class ContentCrawler implements CrawlerInterface
     public function setOffset($offset): CrawlerInterface
     {
         $this->offset = $offset;
+
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCompleted(): bool
+    {
+        return $this->isCompleted;
+    }
+
+    /**
+     * @param bool $isCompleted
+     */
+    public function setIsCompleted(bool $isCompleted): void
+    {
+        $this->isCompleted = $isCompleted;
     }
 
     /**
@@ -260,6 +342,7 @@ abstract class ContentCrawler implements CrawlerInterface
     public function setProgressBar(ProgressBar $progressBar): ContentCrawler
     {
         $this->progressBar = $progressBar;
+
         return $this;
     }
 
@@ -284,6 +367,7 @@ abstract class ContentCrawler implements CrawlerInterface
             $progressBar = new ProgressBar($this->getOutput(), $steps);
             $this->setProgressBar($progressBar);
         }
+
         return $this;
     }
 
@@ -296,6 +380,7 @@ abstract class ContentCrawler implements CrawlerInterface
         if ($this->getOutput() instanceof OutputInterface) {
             $this->getProgressBar()->advance($steps);
         }
+
         return $this;
     }
 
@@ -307,13 +392,14 @@ abstract class ContentCrawler implements CrawlerInterface
         if ($this->getOutput() instanceof OutputInterface) {
             $this->getProgressBar()->finish();
         }
+
         return $this;
     }
 
     /**
-     * @return string
+     * @return string/null
      */
-    public function getContent(): string
+    public function getContent()
     {
         return $this->content;
     }
@@ -322,9 +408,10 @@ abstract class ContentCrawler implements CrawlerInterface
      * @param string $content
      * @return ContentCrawler
      */
-    public function setContent(string $content): ContentCrawler
+    public function setContent($content): ContentCrawler
     {
         $this->content = $content;
+
         return $this;
     }
 
@@ -339,7 +426,7 @@ abstract class ContentCrawler implements CrawlerInterface
     /**
      * @return string|null
      */
-    public function getPath() :?string
+    public function getPath(): ?string
     {
         return $this->path;
     }
@@ -374,6 +461,7 @@ abstract class ContentCrawler implements CrawlerInterface
         $content = $this->executeThenGetContent($method, $params);
         $this->getCrawler()->clear();
         $this->getCrawler()->add($content);
+
         return $this;
     }
 
@@ -385,9 +473,10 @@ abstract class ContentCrawler implements CrawlerInterface
     public function preparePath($path, $vars = [])
     {
         foreach ($vars as $key => $value) {
-            $pattern = '/(\?' . ($key + 1) . ')/';
+            $pattern = '/(\?'.($key + 1).')/';
             $path = preg_replace($pattern, $value, $path);
         }
+
         return $path;
     }
 
@@ -405,6 +494,7 @@ abstract class ContentCrawler implements CrawlerInterface
         if (!is_array($config)) {
             return null;
         }
+
         return MetadataSchemaResources::createSchema($config);
     }
 
@@ -432,7 +522,7 @@ abstract class ContentCrawler implements CrawlerInterface
      */
     protected function getSchemaResource($name, $id)
     {
-        $overrideName = $name . '.override';
+        $overrideName = $name.'.override';
         $overrideConfig = $this
             ->getConfigManager()
             ->getValue($overrideName);
@@ -457,7 +547,7 @@ abstract class ContentCrawler implements CrawlerInterface
         $limit = $this->getLimit();
         $offset = $this->getOffset();
         $ceiling = $offset + $limit;
-        switch(true) {
+        switch (true) {
             case ($offset <= $index && $index < $ceiling):
                 return true;
                 break;
@@ -465,6 +555,40 @@ abstract class ContentCrawler implements CrawlerInterface
                 return false;
                 break;
         }
+    }
+
+    /**
+     * @param $imageUrl
+     * @param $imageName
+     * @param null $folder
+     * @return string
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    protected function processImageUrl($imageUrl, $imageName, $folder = null)
+    {
+        $ext = $this
+            ->getMediaManager()
+            ->getExtension($imageUrl);
+        $filename = $this
+            ->getMediaManager()
+            ->getRelativeFilename($folder, $imageName, $ext);
+        $this
+            ->getProcessQueueMediaManager()
+            ->add($filename, $imageUrl);
+        return $filename;
+    }
+
+    /**
+     * @param $url
+     * @param $tmkCodePosition
+     * @param $slugPosition
+     * @return array
+     */
+    protected function getTmkCodeThenSlug($url, $tmkCodePosition, $slugPosition)
+    {
+        $tmkCode = UrlTool::getParamFromUrl($url, 4);
+        $slug = UrlTool::getParamFromUrl($url, 1);
+        return [$tmkCode, $slug];
     }
 
 }

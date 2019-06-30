@@ -4,6 +4,7 @@
 namespace App\Tool\TransferMkt\Team;
 
 
+use App\Tool\HtmlTool;
 use Symfony\Component\DomCrawler\Crawler;
 
 class TeamOverviewTool
@@ -14,9 +15,10 @@ class TeamOverviewTool
      */
     static public function getFullName(Crawler $node)
     {
-        return $node
-            ->filter('h1.name')
+        $title = $node
+            ->filter('h1')
             ->text();
+        return HtmlTool::trimHtml($title);
     }
 
     /**

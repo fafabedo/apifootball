@@ -7,7 +7,6 @@ use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionSeasonMatch;
 use App\Entity\CompetitionSeasonMatchTeam;
 use App\Entity\CompetitionSeasonTeam;
-use App\Entity\CompetitionType;
 use App\Entity\MatchStage;
 use App\Entity\Team;
 use App\Event\CompetitionSeasonMatchEvent;
@@ -17,16 +16,12 @@ use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Crawler\Entity\Team\TeamByCodeCrawler;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Service\Request\RequestService;
 use App\Tool\TransferMkt\CompetitionFixtureTool;
 use App\Tool\DateTimeTool;
 use App\Tool\TransferMkt\CompetitionGroupsMatchDayTool;
 use App\Tool\UrlTool;
-use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityNotFoundException;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class CompetitionSeasonMatchCrawler
@@ -68,52 +63,6 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
      * @var bool
      */
     private $forceUpdate = false;
-
-    /**
-     * @var TeamByCodeCrawler
-     */
-    private $teamByCodeCrawler;
-
-    /**
-     * CompetitionSeasonMatchCrawler constructor.
-     * @param ManagerRegistry $doctrine
-     * @param ConfigManager $configManager
-     * @param RequestService $requestService
-     * @param KernelInterface $kernel
-     * @param MetadataSchemaResources $metadataSchema
-     * @param CacheLifetime $cacheLifetime
-     * @param EventDispatcherInterface $eventDispatcher
-     * @param TeamByCodeCrawler $teamByCodeCrawler
-     */
-    public function __construct(
-        ManagerRegistry $doctrine,
-        ConfigManager $configManager,
-        RequestService $requestService,
-        KernelInterface $kernel,
-        MetadataSchemaResources $metadataSchema,
-        CacheLifetime $cacheLifetime,
-        EventDispatcherInterface $eventDispatcher,
-        TeamByCodeCrawler $teamByCodeCrawler
-    ) {
-        $this->teamByCodeCrawler = $teamByCodeCrawler;
-        parent::__construct(
-            $doctrine,
-            $configManager,
-            $requestService,
-            $kernel,
-            $metadataSchema,
-            $cacheLifetime,
-            $eventDispatcher
-        );
-    }
-
-    /**
-     * @return TeamByCodeCrawler
-     */
-    public function getTeamByCodeCrawler(): TeamByCodeCrawler
-    {
-        return $this->teamByCodeCrawler;
-    }
 
     /**
      * @return Competition/null
@@ -208,6 +157,9 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
             ->getRepository(CompetitionSeason::class)
             ->findByConfiguration($this->getCompetition(), $this->getCompetitionSeason(), $this->isFeatured());
 
+        $lifetime = $this
+            ->getCacheLifetime()
+            ->getLifetime(CacheLifetime::CACHE_COMPETITION_MATCH);
         $this->createProgressBar('Crawl fixture information...', count($competitionSeasons));
         $index = 1;
         /* @var CompetitionSeason $competitionSeason */
@@ -233,7 +185,7 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
                     ->getId();
                 $url = $competitionTypeId === 1 ? $fixtureCollectionTournament->getUrl() : $fixtureCollection->getUrl();
                 $preparedUrl = $this->preparePath($url, [$slug, $tmkCode, $year]);
-                $this->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION_MATCH))
+                $this->setLifetime($lifetime)
                     ->processPath($preparedUrl);
                 switch ($competitionTypeId) {
                     case 1:
@@ -249,6 +201,9 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
             }
             $this->advanceProgressBar();
             $index++;
+            if (count($competitionSeasons) <= $index) {
+                $this->setIsCompleted(true);
+            }
         }
         $this->finishProgressBar();
         return $this;
@@ -316,36 +271,36 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
         foreach ($tablesNode as $table) {
             /* @var Crawler $row */
             foreach ($table as $row) {
-                $cells = $row->children(); // TDs in Table
-                $cellDate = $cells->eq(0)->html();
-                $cellTime = $cells->eq(1)->text();
-                $cellMatch = $cells->eq(4)->html();
-                $cellHome = $cells->eq(3)->html();
-                $cellAway = $cells->eq(5)->html();
-                $matchDate = CompetitionFixtureTool::extractDateCellDate($cellDate);
-                $matchTime = DateTimeTool::setTextTimeToDateTime($matchDate, $cellTime);
-                $path = CompetitionFixtureTool::extractMatchLink($cellMatch);
-                $homeTmkCode = CompetitionFixtureTool::extractTeamCode($cellHome);
-                $awayTmkCode = CompetitionFixtureTool::extractTeamCode($cellAway);
-                $url = $globalUrl->getUrl().$path;
-                $tmkCode = UrlTool::getParamFromUrl($url, 4);
-
-                $match = $this->findFixtureByTmkCode($tmkCode);
-                if (!$match instanceof CompetitionSeasonMatch) {
-                    $match = new CompetitionSeasonMatch();
-                    $match->setTmkCode($tmkCode);
-                }
-                if (!$this->matchShouldBeUpdated($match)) {
-                    continue;
-                }
-                $match->setCompetitionSeason($competitionSeason);
-                $match->setMatchDatetime($matchTime);
-                $match->setMatchDay($matchDay);
-                $match->setMatchStage($matchStage);
-                $schema = (MetadataSchemaResources::createSchema())->setUrl($url);
-                $match->setMetadata($schema->getSchema());
-
                 try {
+                    $cells = $row->children(); // TDs in Table
+                    $cellDate = $cells->eq(0)->html();
+                    $cellTime = $cells->eq(1)->text();
+                    $cellMatch = $cells->eq(4)->html();
+                    $cellHome = $cells->eq(3)->html();
+                    $cellAway = $cells->eq(5)->html();
+                    $matchDate = CompetitionFixtureTool::extractDateCellDate($cellDate);
+                    $matchTime = DateTimeTool::setTextTimeToDateTime($matchDate, $cellTime);
+                    $path = CompetitionFixtureTool::extractMatchLink($cellMatch);
+                    $homeTmkCode = CompetitionFixtureTool::extractTeamCode($cellHome);
+                    $awayTmkCode = CompetitionFixtureTool::extractTeamCode($cellAway);
+                    $url = $globalUrl->getUrl().$path;
+                    $tmkCode = UrlTool::getParamFromUrl($url, 4);
+
+                    $match = $this->findFixtureByTmkCode($tmkCode);
+                    if (!$match instanceof CompetitionSeasonMatch) {
+                        $match = new CompetitionSeasonMatch();
+                        $match->setTmkCode($tmkCode);
+                    }
+                    if (!$this->matchShouldBeUpdated($match)) {
+                        continue;
+                    }
+                    $match->setCompetitionSeason($competitionSeason);
+                    $match->setMatchDatetime($matchTime);
+                    $match->setMatchDay($matchDay);
+                    $match->setMatchStage($matchStage);
+                    $schema = (MetadataSchemaResources::createSchema())->setUrl($url);
+                    $match->setMetadata($schema->getSchema());
+
                     $match = $this->addCompetitionSeasonMatchTeam($match, $homeTmkCode, $cellMatch);
                     $match = $this->addCompetitionSeasonMatchTeam($match, $awayTmkCode, $cellMatch, false);
                     $fixtureMatches[] = $match;
@@ -668,8 +623,6 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
     {
         switch (true) {
             case ($home && $scoreHome > $scoreAway) :
-                return true;
-                break;
             case (!$home && $scoreHome < $scoreAway) :
                 return true;
                 break;
@@ -716,6 +669,18 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
         }
 
         return $this;
+    }
+
+    /**
+     * @return TeamByCodeCrawler|object
+     */
+    private function getTeamByCodeCrawler()
+    {
+        $class = 'App\\Service\\Crawler\\Entity\\Team\\TeamByCodeCrawler';
+        $this->getContainer()->initialized($class);
+        return $this
+            ->getContainer()
+            ->get($class);
     }
 
 }

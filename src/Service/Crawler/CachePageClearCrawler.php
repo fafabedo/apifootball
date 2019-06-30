@@ -23,10 +23,7 @@ class CachePageClearCrawler extends ContentCrawler implements CrawlerInterface
      */
     public function getData()
     {
-        return $this
-            ->getDoctrine()
-            ->getRepository(CachePage::class)
-            ->findAllCacheExpired();
+        return [1];
     }
 
     /**
@@ -38,6 +35,9 @@ class CachePageClearCrawler extends ContentCrawler implements CrawlerInterface
             ->getDoctrine()
             ->getRepository(CachePage::class)
             ->deleteAllCacheExpired();
+
+        $this->setIsCompleted(true);
+
         return $this;
     }
 

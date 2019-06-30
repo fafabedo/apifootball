@@ -47,7 +47,7 @@ class CompetitionSeasonRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('cs')
             ->select('cs')
-            ->innerJoin('cs.competition', 'c')
+            ->join('cs.competition', 'c')
             ->where('c.isFeatured = :featured')
             ->andWhere('cs.archive = :archive')
             ->setParameter('featured', true)
@@ -83,6 +83,27 @@ class CompetitionSeasonRepository extends ServiceEntityRepository
                 return [];
                 break;
         }
+    }
+
+    /**
+     * @param Competition $competition
+     * @param \DateTime $start
+     * @param \DateTime $end
+     * @return mixed
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function findByStartEnd(Competition $competition, $start, $end)
+    {
+        return $this->createQueryBuilder('cs')
+            ->select('cs')
+            ->where('cs.competition = :competition')
+            ->andWhere('cs.start_season = :start')
+            ->andWhere('cs.end_season = :end')
+            ->setParameter('competition', $competition)
+            ->setParameter('start', $start->format('Y-m-d'))
+            ->setParameter('end', $end->format('Y-m-d'))
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     // /**

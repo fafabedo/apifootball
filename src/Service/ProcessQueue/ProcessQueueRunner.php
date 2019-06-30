@@ -128,34 +128,40 @@ class ProcessQueueRunner
                 ->log($processOperation, 'PID: '.$processQueue->getId());
             try {
                 $offset = $processOperation->getProcessedItems() + 1;
-                $service
-                    ->setLimit($processOperation->getBatchLimit())
-                    ->setOffset($offset)
-                    ->process();
+                if (!empty($processOperation->getBatchLimit())) {
+                    $service
+                        ->setLimit($processOperation->getBatchLimit())
+                        ->setOffset($offset);
+                }
+                $service->process();
                 $service->saveData();
                 $data = $service->getData() ?? [];
-                $processedItems = count($data);
-                $processedBatch = $processOperation->getProcessedItems();
-                if (!empty($data)) {
-                    $processedBatch += $processOperation->getBatchLimit();
+                $processedBatch = null;
+                $isCompleted = $service->isCompleted();
+                if (!empty($processOperation->getBatchLimit())) {
+                    $processedBatch = $processOperation->getProcessedItems();
+                    if (!empty($data)) {
+                        $processedBatch += $processOperation->getBatchLimit();
+                    }
                 }
                 $timestamp = new \DateTime();
                 $message = 'Processed successfully items: '.count($data).' time: '.$timestamp->format('Y-m-d H:i:s');
                 $this
                     ->getProcessQueueManager()
-                    ->updateStatus($processOperation, $processedItems)
+                    ->updateStatus($processOperation, $isCompleted)
                     ->updateProcessedItems($processOperation, $processedBatch)
                     ->log($processOperation, $message);
 
+
                 if ($this->getIo() instanceof SymfonyStyle) {
-                    $this->getIo()->success('PID ('.$processQueue->getId().') completed');
+                    $this->getIo()->success('PID ('.$processQueue->getId().') completed ');
                 }
             } catch (\Exception $e) {
                 $this
                     ->getProcessQueueManager()
                     ->log($processOperation, $e->getMessage(), ProcessQueueLog::TYPE_ERROR);
                 if ($this->getIo() instanceof SymfonyStyle) {
-                    $this->getIo()->error('PID ('.$processQueue->getId().') threw an error');
+                    $this->getIo()->error('PID ('.$processQueue->getId().') threw an error: ' . $e->getMessage());
                 }
             }
 
@@ -242,15 +248,22 @@ class ProcessQueueRunner
      */
     private function isLastExecutionBeforeTimeInterval(ProcessQueueOperation $processQueueOperation): bool
     {
-        if ($processQueueOperation->getStatus() === ProcessQueueOperation::STATUS_ONGOING) {
-            return true;
-        }
         $processQueue = $processQueueOperation->getProcessQueue();
-        $lastExecution = $processQueueOperation->getUpdated();
-        $interval = $processQueue->getFrequency();
-        $now = new \DateTime();
+        switch (true) {
+            case ($processQueueOperation->getStatus() === ProcessQueueOperation::STATUS_ONGOING):
+            case ($processQueueOperation->getCreated()->getTimestamp() === $processQueue->getCreated()->getTimestamp()):
+                return true;
+                break;
+            case ($processQueueOperation->getStatus() === ProcessQueueOperation::STATUS_PENDING):
+            default:
+                $processQueue = $processQueueOperation->getProcessQueue();
+                $createdAt = $processQueueOperation->getCreated();
+                $interval = $processQueue->getFrequency();
+                $now = new \DateTime();
 
-        return ($processQueue->getType() === ProcessQueue::TYPE_RECURRING
-            && ($lastExecution->getTimestamp() + $interval) < $now->getTimestamp());
+                return ($processQueue->getType() === ProcessQueue::TYPE_RECURRING
+                    && ($createdAt->getTimestamp() + $interval) < $now->getTimestamp());
+                break;
+        }
     }
 }

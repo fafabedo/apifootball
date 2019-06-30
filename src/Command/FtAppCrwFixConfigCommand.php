@@ -118,8 +118,13 @@ class FtAppCrwFixConfigCommand extends Command
                 ProcessQueue::TYPE_RECURRING,
                 $frequency * 1,
                 100)
+            ->add('App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonCrawler',
+                ['featured' => true],
+                ProcessQueue::TYPE_RECURRING,
+                $frequency * 1,
+                100)
             ->add(
-                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonCrawler',
+                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonTeamCrawler',
                 ['featured' => true],
                 ProcessQueue::TYPE_RECURRING,
                 $frequency * 30,

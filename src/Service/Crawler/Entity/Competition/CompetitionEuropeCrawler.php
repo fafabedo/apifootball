@@ -8,6 +8,7 @@ use App\Entity\TeamType;
 use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
+use App\Service\Crawler\Item\EntityElement;
 use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\CompetitionEuropeTool;
 use App\Tool\FederationTool;
@@ -80,6 +81,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function process(): CrawlerInterface
     {
@@ -153,7 +155,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
             return [];
         }
         $this
-            ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+            ->setLifetime($this->getLifeTimeValue())
             ->processPath($europeCompetitionsUrl->getUrl())
         ;
         $clubComps = CompetitionEuropeTool::getClubCompetitions($this->getCrawler());
@@ -174,22 +176,19 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
     private function createCompetitions(array $comps, TeamType $teamType): array
     {
         $competitions = [];
+        /* @var EntityElement $item */
         foreach ($comps as $item) {
-            if (!isset($item['url']) || !isset($item['name'])) {
-                continue;
-            }
-            $url = $this->getGlobalUrl()->getUrl() . $item['url'];
-            $tmkCode = UrlTool::getParamFromUrl($url, 4);
-            $slug = UrlTool::getParamFromUrl($url, 1);
+            $url = $this->getGlobalUrl()->getUrl() . $item->getUrl();
+            list($tmkCode, $slug) = $this->getTmkCodeThenSlug($url, 4, 1);
             $competition = $this->getDoctrine()
                 ->getRepository(Competition::class)
                 ->findOneByTmkCode($tmkCode);
             if (!$competition instanceof Competition) {
                 $competition = new Competition();
-                $competition->setCode($tmkCode);
+                $competition->setTmkCode($tmkCode);
                 $competition->setSlug($slug);
             }
-            $competition->setName($item['name']);
+            $competition->setName($item->getName());
             $competition->setTeamType($teamType);
             $uefaFederation = FederationTool::getUefaFederation($this->getDoctrine());
             $competition->setFederation($uefaFederation);
@@ -197,13 +196,6 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
             $schema = MetadataSchemaResources::createSchema()
                 ->setUrl($url);
             $competition->setMetadata($schema->getSchema());
-
-            // Competition Season
-            if ($competition->getCompetitionSeasons()->count() === 0) {
-                $competitionSeason = new CompetitionSeason();
-                $competitionSeason->setArchive(false);
-                $competition->addCompetitionSeason($competitionSeason);
-            }
 
             $competitions[] = $competition;
         }
@@ -214,6 +206,7 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
      * @return CrawlerInterface
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     protected function processCompetitions(): CrawlerInterface
     {
@@ -223,29 +216,20 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
         $this->createProgressBar('Process competitions', count($this->competitions));
         foreach ($this->competitions as $competition) {
             $metadata = $competition->getMetadata();
+            $tmkCode = $competition->getTmkCode();
             $schema = MetadataSchemaResources::createSchema($metadata);
             if ($schema->getUrl() === null) {
                 continue;
             }
             $this
-                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                ->setLifetime($this->getLifeTimeValue())
                 ->processPath($schema->getUrl())
             ;
-            $imageUrl = CompetitionEuropeTool::getImageFromCompetition($this->getCrawler());
             $teams = CompetitionEuropeTool::getParticipants($this->getCrawler());
-            $destination = FilesystemTool::getDestination(
-                $this->getRootFolder(),
-                self::COMPETITION_FOLDER,
-                $competition->getCode(),
-                FilesystemTool::getExtension($imageUrl)
-            );
 
-            $filename = null;
-            if (FilesystemTool::persistFile($imageUrl, $destination) === true) {
-                $filename = FilesystemTool::getFilename(self::COMPETITION_FOLDER,
-                    $competition->getCode(),
-                    FilesystemTool::getExtension($imageUrl));
-            }
+            $imageUrl = CompetitionEuropeTool::getImageFromCompetition($this->getCrawler());
+            $filename = $this
+                ->processImageUrl($imageUrl, $tmkCode, self::COMPETITION_FOLDER);
             $competition->setImage($filename);
             $competition->setNumberTeams($teams);
             $this->advanceProgressBar();
@@ -272,6 +256,13 @@ class CompetitionEuropeCrawler extends ContentCrawler implements CrawlerInterfac
     {
         return $this
             ->getConfigSchema('crawler.global.url');
+    }
+
+    private function getLifeTimeValue()
+    {
+        return $this
+            ->getCacheLifetime()
+            ->getLifetime(CacheLifetime::CACHE_COMPETITION);
     }
 
 }

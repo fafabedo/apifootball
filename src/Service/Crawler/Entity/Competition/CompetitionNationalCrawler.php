@@ -10,6 +10,7 @@ use App\Entity\Team;
 use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
+use App\Service\Crawler\Item\EntityElement;
 use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\CountryPageTool;
 use App\Tool\TypeTool;
@@ -107,6 +108,9 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
     public function process(): CrawlerInterface
     {
         $countries = $this->getCountryList();
+        $lifetime = $this
+            ->getCacheLifetime()
+            ->getLifetime(CacheLifetime::CACHE_COMPETITION);
         $this->createProgressBar('Crawl national teams', count($countries));
         foreach ($countries as $country) {
             $metadata = $country->getMetadata();
@@ -114,7 +118,7 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
             if ($schema->getUrl() !== null) {
                 $url = $this->preparePath($schema->getUrl(), [$country->getCode()]);
                 $this
-                    ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                    ->setLifetime($lifetime)
                     ->processPath($url, $schema->getMethod())
                 ;
                 $teamList = CountryPageTool::getNationalTeamLinks($this->getCrawler());
@@ -184,12 +188,16 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
     private function createTeams(Country $country, array $list = [])
     {
         $teams = [];
+        $lifetime = $this
+            ->getCacheLifetime()
+            ->getLifetime(CacheLifetime::CACHE_COMPETITION);
+        /* @var EntityElement $teamData */
         foreach ($list as $key => $teamData) {
-            $teamUrl = $this->getBaseUrl()->getUrl() . $teamData['url'];
+            $teamUrl = $this->getBaseUrl()->getUrl() . $teamData->getUrl();
             $tmkCode = UrlTool::getParamFromUrl($teamUrl, 4);
             $slug = UrlTool::getParamFromUrl($teamUrl, 1);
             $this
-                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
+                ->setLifetime($lifetime)
                 ->processPath($teamUrl)
             ;
             $federationName = CountryPageTool::getFederationFromCountryPage($this->getCrawler());
@@ -198,13 +206,13 @@ class CompetitionNationalCrawler extends ContentCrawler implements CrawlerInterf
             $team = $this->getDoctrine()
                 ->getRepository(Team::class)
                 ->findOneByTmkCode($tmkCode);
-            if ($team === null) {
+            if (!$team instanceof Team) {
                 $team = new Team();
                 $team->setTmkCode($tmkCode);
             }
             $team->setCountry($country);
-            $team->setName($teamData['name']);
-            $team->setShortname($teamData['name']);
+            $team->setName($teamData->getName());
+            $team->setShortname($teamData->getName());
             $team->setSlug($slug);
             $team->setIsYouthTeam(($key==0 ? false : true));
             $team->setTeamType(TypeTool::getNationalTypeTeam($this->getDoctrine()));

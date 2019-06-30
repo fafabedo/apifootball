@@ -13,6 +13,10 @@ use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\Team\TeamSquadTool;
 use Cocur\Slugify\Slugify;
 
+/**
+ * Class CompetitionSeasonPlayerCrawler
+ * @package App\Service\Crawler\Entity\CompetitionSeason
+ */
 class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerInterface
 {
     /**
@@ -135,16 +139,25 @@ class CompetitionSeasonPlayerCrawler extends ContentCrawler implements CrawlerIn
             }
             $this->advanceProgressBar();
             $index++;
+            if (count($seasonTeams) <= $index) {
+                $this->setIsCompleted(true);
+            }
         }
         $this->finishProgressBar();
         return $this;
     }
 
+    /**
+     * @return CompetitionSeasonTeamPlayer[]
+     */
     public function getData()
     {
         return $this->competitionSeasonTeamPlayer;
     }
 
+    /**
+     * @return CrawlerInterface
+     */
     public function saveData(): CrawlerInterface
     {
         $em = $this->getDoctrine()->getManager();

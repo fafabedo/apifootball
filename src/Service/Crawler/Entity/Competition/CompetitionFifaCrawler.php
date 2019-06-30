@@ -9,6 +9,7 @@ use App\Entity\CompetitionSeason;
 use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
+use App\Service\Crawler\Item\EntityElement;
 use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\CompetitionEuropeTool;
 use App\Tool\FederationTool;
@@ -37,8 +38,38 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
      */
     public function process(): CrawlerInterface
     {
-        $this->competitions = $this->getCompetitions();
-        $this->processCompetitions();
+        $competitions = $this->getCompetitions();
+        if (empty($competitions)) {
+            return $this;
+        }
+        $lifetime = $this
+            ->getCacheLifetime()
+            ->getLifetime(CacheLifetime::CACHE_COMPETITION);
+        $this->createProgressBar('Crawl and process competition', count($competitions));
+        /* @var Competition $competition */
+        foreach ($competitions as $competition) {
+            $tmkCode = $competition->getTmkCode();
+            $schema = MetadataSchemaResources::createSchema($competition->getMetadata());
+            if ($schema->getUrl() === null) {
+                $this->advanceProgressBar();
+                continue;
+            }
+            $this
+                ->setLifetime($lifetime)
+                ->processPath($schema->getUrl())
+            ;
+            try {
+                $imageUrl = CompetitionEuropeTool::getImageFromCompetition($this->getCrawler());
+                $filename = $this
+                    ->processImageUrl($imageUrl, $tmkCode, self::COMPETITION_FOLDER);
+                $competition->setImage($filename);
+                $this->competitions[] = $competition;
+            }
+            catch (\Exception $e) {
+            }
+            $this->advanceProgressBar();
+        }
+        $this->finishProgressBar();
         return $this;
     }
 
@@ -62,50 +93,6 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
             $this->advanceProgressBar();
         }
         $em->flush();
-        $this->finishProgressBar();
-        return $this;
-    }
-
-    /**
-     * @return CrawlerInterface
-     * @throws \App\Exception\InvalidMetadataSchema
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     */
-    private function processCompetitions(): CrawlerInterface
-    {
-        if (empty($this->competitions)) {
-            return $this;
-        }
-        $this->createProgressBar('Crawl and process competition', count($this->competitions));
-        foreach ($this->competitions as $competition) {
-            $schema = MetadataSchemaResources::createSchema($competition->getMetadata());
-            if ($schema->getUrl() === null) {
-                $this->advanceProgressBar();
-                continue;
-            }
-            $this
-                ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_COMPETITION))
-                ->processPath($schema->getUrl())
-            ;
-            $imageUrl = CompetitionEuropeTool::getImageFromCompetition($this->getCrawler());
-            $destination = FilesystemTool::getDestination(
-                $this->getRootFolder(),
-                self::COMPETITION_FOLDER,
-                $competition->getCode(),
-                FilesystemTool::getExtension($imageUrl)
-            );
-
-            $filename = null;
-            if (!file_exists($destination)) {
-                if (FilesystemTool::persistFile($imageUrl, $destination) === true) {
-                    $filename = FilesystemTool::getFilename(self::COMPETITION_FOLDER,
-                        $competition->getCode(),
-                        FilesystemTool::getExtension($imageUrl));
-                }
-                $competition->setImage($filename);
-            }
-            $this->advanceProgressBar();
-        }
         $this->finishProgressBar();
         return $this;
     }
@@ -145,11 +132,9 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
     private function createCompetitions(array $comps): array
     {
         $competitions = [];
+        /* @var EntityElement $item */
         foreach ($comps as $item) {
-            if (!isset($item['url']) || !isset($item['name'])) {
-                continue;
-            }
-            $url= $this->getGlobalUrl() . $item['url'];
+            $url= $this->getGlobalUrl() . $item->getUrl();
             $tmkCode = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
             $competition = $this->getDoctrine()
@@ -157,10 +142,10 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
                 ->findOneByTmkCode($tmkCode);
             if (!$competition instanceof Competition) {
                 $competition = new Competition();
-                $competition->setCode($tmkCode);
+                $competition->setTmkCode($tmkCode);
                 $competition->setSlug($slug);
             }
-            $competition->setName($item['name']);
+            $competition->setName($item->getName());
             $teamType = TypeTool::getNationalTypeTeam($this->getDoctrine());
             $competition->setTeamType($teamType);
             $competition->setLeagueLevel(1);
@@ -169,13 +154,6 @@ class CompetitionFifaCrawler extends ContentCrawler implements CrawlerInterface
             $schema = MetadataSchemaResources::createSchema()
                 ->setUrl($url);
             $competition->setMetadata($schema->getSchema());
-
-            // Competition Season
-            if ($competition->getCompetitionSeasons()->count() === 0) {
-                $competitionSeason = new CompetitionSeason();
-                $competitionSeason->setArchive(false);
-                $competition->addCompetitionSeason($competitionSeason);
-            }
 
             $competitions[] = $competition;
         }

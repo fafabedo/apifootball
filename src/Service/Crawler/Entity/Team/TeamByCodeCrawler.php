@@ -16,6 +16,10 @@ use App\Tool\TransferMkt\Team\TeamOverviewTool;
 use App\Tool\TypeTool;
 use App\Tool\UrlTool;
 
+/**
+ * Class TeamByCodeCrawler
+ * @package App\Service\Crawler\Entity\Team
+ */
 class TeamByCodeCrawler extends ContentCrawler
 {
     /**
@@ -55,15 +59,16 @@ class TeamByCodeCrawler extends ContentCrawler
      */
     public function process(): CrawlerInterface
     {
+        $lifetime = $this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_TEAM);
         if ($this->getTmkCode() === null) {
             return $this;
         }
         $teamOverview = $this->getConfigSchema('crawler.team.overview.page.url');
         $this->createProgressBar('Crawling team overview page', 2);
-        $url = $this->preparePath($teamOverview->getUrl(), ['team', $this->getTmkCode()]);
+        $preparedUrl = $this->preparePath($teamOverview->getUrl(), ['team', $this->getTmkCode()]);
         $this
-            ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_TEAM))
-            ->processPath($url);
+            ->setLifetime($lifetime)
+            ->processPath($preparedUrl);
 
         $team = $this
             ->getDoctrine()
@@ -89,22 +94,29 @@ class TeamByCodeCrawler extends ContentCrawler
         $team->setTeamType(TypeTool::getClubTypeTeam($this->getDoctrine()));
         $team->setIsYouthTeam( false);
         $metadataSchema = new MetadataSchemaResources();
-        $metadataSchema->setUrl($url);
+        $metadataSchema->setUrl($preparedUrl);
         $team->setMetadata($metadataSchema->getSchema());
         $this->team = $team;
         return $this;
     }
 
+    /**
+     * @return Team
+     */
     public function getData()
     {
         return $this->team;
     }
 
+    /**
+     * @return CrawlerInterface
+     */
     public function saveData(): CrawlerInterface
     {
         $em = $this->getDoctrine()->getManager();
         $em->persist($this->team);
         $em->flush();
+        return $this;
     }
 
 }

@@ -1,13 +1,11 @@
 <?php
 
-
 namespace App\Service\Crawler\Entity\Competition;
 
-
 use App\Entity\Competition;
-use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionType;
 use App\Entity\TeamType;
+use App\Service\Crawler\Item\EntityElement;
 use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
@@ -18,12 +16,15 @@ use App\Tool\UrlTool;
 
 class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements CrawlerInterface
 {
+    const COMPETITION_FOLDER = 'competition';
+
     /**
      * @return CrawlerInterface
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function process(): CrawlerInterface
     {
@@ -47,6 +48,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     private function getClubCompetitions(): array
     {
@@ -71,6 +73,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     private function getInternationalCompetitions(): array
     {
@@ -87,6 +90,7 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \App\Exception\InvalidMetadataSchema
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     private function createCompetitions(array $comps, TeamType $teamType): array
     {
@@ -95,11 +99,10 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
             ->getRepository(CompetitionType::class)
             ->find(CompetitionType::TOURNAMENT);
         $competitions = [];
+        /* @var EntityElement $item */
         foreach ($comps as $item) {
-            if (!isset($item['url']) || !isset($item['name'])) {
-                continue;
-            }
-            $url = $this->getGlobalUrl()->getUrl() . $item['url'];
+            $url = $this->getGlobalUrl()->getUrl();
+            $url .= $item->getUrl();
             $tmkCode = UrlTool::getParamFromUrl($url, 4);
             $slug = UrlTool::getParamFromUrl($url, 1);
 
@@ -112,23 +115,19 @@ class CompetitionAmericaCrawler extends CompetitionEuropeCrawler implements Craw
                 $competition->setTmkCode($tmkCode);
                 $competition->setSlug($slug);
             }
-            $competition->setName($item['name']);
+            $competition->setName($item->getName());
             $competition->setTeamType($teamType);
-            $federation = CompetitionAmericaTool::determineFederation($this->getDoctrine(), $item['name']);
+            $federation = CompetitionAmericaTool::determineFederation($this->getDoctrine(), $item->getName());
+            $imageUrl = CompetitionEuropeTool::getImageFromCompetition($this->getCrawler());
+            $filename = $this
+                ->processImageUrl($imageUrl, $tmkCode, self::COMPETITION_FOLDER);
+            $competition->setImage($filename);
             $competition->setFederation($federation);
             $competition->setLeagueLevel(1);
             $competition->setCompetitionType($competitionType);
             $schema = MetadataSchemaResources::createSchema()
                 ->setUrl($url);
             $competition->setMetadata($schema->getSchema());
-
-            /* Add Competition Season */
-            if ($competition->getCompetitionSeasons()->count() === 0) {
-                $competitionSeason = new CompetitionSeason();
-                $competitionSeason->setArchive(false);
-                $competitionSeason->setMetadata($schema->getSchema());
-                $competition->addCompetitionSeason($competitionSeason);
-            }
 
             $competitions[] = $competition;
         }

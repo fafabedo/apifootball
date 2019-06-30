@@ -112,22 +112,19 @@ class ProcessQueueManager
 
     /**
      * @param ProcessQueueOperation $processQueueOperation
-     * @param $savedData
+     * @param bool $isCompleted
      * @return ProcessQueueManager
+     * @throws \Exception
      */
-    public function updateStatus(ProcessQueueOperation $processQueueOperation, $savedData)
+    public function updateStatus(ProcessQueueOperation $processQueueOperation, $isCompleted = false)
     {
-        $finished = false;
-        if ($savedData === 0) {
-            $finished = true;
-        }
         $status = $processQueueOperation->getStatus();
         switch (true) {
-            case ($status === ProcessQueueOperation::STATUS_ONGOING && $finished):
-            case ($status === ProcessQueueOperation::STATUS_PENDING && $finished):
+            case ($status === ProcessQueueOperation::STATUS_ONGOING && $isCompleted):
+            case ($status === ProcessQueueOperation::STATUS_PENDING && $isCompleted):
                 $status = ProcessQueueOperation::STATUS_PROCESSED;
                 break;
-            case ($status === ProcessQueueOperation::STATUS_PENDING && !$finished):
+            case ($status === ProcessQueueOperation::STATUS_PENDING && !$isCompleted):
                 $status = ProcessQueueOperation::STATUS_ONGOING;
                 break;
             default:
@@ -135,9 +132,12 @@ class ProcessQueueManager
                 break;
         }
         $processQueueOperation->setStatus($status);
+        $updated = new \DateTime();
+        $processQueueOperation->setUpdated($updated);
         $this->getEm()->persist($processQueueOperation);
         $this->recurringCloneOperation($processQueueOperation);
         $this->getEm()->flush();
+
         return $this;
     }
 
@@ -152,26 +152,33 @@ class ProcessQueueManager
         }
         $processQueue = $processOperation->getProcessQueue();
         if ($processQueue->getType() === ProcessQueue::TYPE_RECURRING) {
-            $processOperation->setStatus(ProcessQueueOperation::STATUS_PENDING);
-            $this->getEm()->persist($processOperation);
+            $newProcess = new ProcessQueueOperation();
+            $newProcess->setProcessQueue($processOperation->getProcessQueue());
+            $newProcess->setStatus(ProcessQueueOperation::STATUS_PENDING);
+            $newProcess->setBatchLimit($processOperation->getBatchLimit());
+//            $processOperation->setStatus(ProcessQueueOperation::STATUS_PENDING);
+//            $processOperation->setProcessedItems(0);
+            $this->getEm()->persist($newProcess);
         }
+
         return $this;
     }
 
     /**
      * @param ProcessQueueOperation $processQueueOperation
      * @param $processedItems
+     * @param $isCompleted
      * @return $this
      */
     public function updateProcessedItems(ProcessQueueOperation $processQueueOperation, $processedItems)
     {
+        if ($processedItems === null) {
+            return $this;
+        }
         $processQueueOperation->setProcessedItems($processedItems);
-        $this
-            ->getEm()
-            ->persist($processQueueOperation);
-        $this
-            ->getEm()
-            ->flush();
+        $em = $this->getEm();
+        $em->persist($processQueueOperation);
+        $em->flush();
 
         return $this;
     }

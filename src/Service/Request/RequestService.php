@@ -10,6 +10,7 @@ use App\Service\Cache\CacheManager;
 use App\Tool\HtmlTool;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\BadResponseException;
 
 /**
  * Class RequestService
@@ -101,7 +102,7 @@ class RequestService
                 ->getCacheManager()
                 ->setPageCache($cid, $path, $content);
         } catch (\Exception $e) {
-            $content = '';
+            $content = null;
         }
         return $content;
     }
@@ -117,6 +118,9 @@ class RequestService
     {
         $client = new Client();
         $res = $client->request($method, $path, $params);
+        if ($res->getStatusCode() !== 200) {
+            throw new \Exception('Unsuccessful response http code');
+        }
         $content = $res->getBody()->getContents();
         return $content;
     }

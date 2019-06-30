@@ -2,6 +2,7 @@
 
 namespace App\Tool\TransferMkt;
 
+use App\Service\Crawler\Item\EntityElement;
 use App\Tool\HtmlTool;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -88,10 +89,9 @@ class CompetitionEuropeTool
                 $name = HtmlTool::trimHtml($node->text());
                 $competition = null;
                 if (isset($matches[1])) {
-                    $competition = [
-                        'url' => $matches[1],
-                        'name' => HtmlTool::trimHtml($name),
-                    ];
+                    $competition = new EntityElement();
+                    $competition->setUrl($matches[1]);
+                    $competition->setName(HtmlTool::trimHtml($name));
                 }
                 return $competition;
             });

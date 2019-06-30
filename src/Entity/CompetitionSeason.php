@@ -29,45 +29,38 @@ class CompetitionSeason
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="bigint")
-     * @Groups({"season"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="date", nullable=true)
-     * @Groups({"season"})
      */
     private $start_season;
 
     /**
      * @ORM\Column(type="date", nullable=true)
-     * @Groups({"season"})
      */
     private $end_season;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Competition", inversedBy="competitionSeasons")
      * @ORM\JoinColumn(onDelete="CASCADE")
-     * @Groups({"season"})
      */
     private $competition;
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
-     * @Groups({"season"})
      */
     private $archive;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTeam", mappedBy="competition_season", cascade={"persist", "remove"})
-     * @Groups({"season"})
      * @ApiSubresource()
      */
     private $competitionSeasonTeams;
 
     /**
      * @ORM\Column(type="array", nullable=true)
-     * @Groups({"season"})
      */
     private $metadata;
 
@@ -95,6 +88,7 @@ class CompetitionSeason
 
     /**
      * @return int|null
+     * @Groups({"read"})
      */
     public function getId(): ?int
     {
@@ -103,6 +97,7 @@ class CompetitionSeason
 
     /**
      * @return \DateTimeInterface|null
+     * @Groups({"read"})
      */
     public function getStartSeason(): ?\DateTimeInterface
     {
@@ -122,6 +117,7 @@ class CompetitionSeason
 
     /**
      * @return \DateTimeInterface|null
+     * @Groups({"read"})
      */
     public function getEndSeason(): ?\DateTimeInterface
     {
@@ -141,6 +137,7 @@ class CompetitionSeason
 
     /**
      * @return Competition|null
+     * @Groups({"read"})
      */
     public function getCompetition(): ?Competition
     {
@@ -160,6 +157,7 @@ class CompetitionSeason
 
     /**
      * @return bool|null
+     * @Groups({"read"})
      */
     public function getArchive(): ?bool
     {
