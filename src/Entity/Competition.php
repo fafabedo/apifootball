@@ -10,6 +10,7 @@ use App\Traits\TmkEntityTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource()
@@ -105,6 +106,7 @@ class Competition
 
     /**
      * @return int|null
+     * @Groups({"read"})
      */
     public function getId(): ?int
     {
@@ -113,6 +115,7 @@ class Competition
 
     /**
      * @return mixed
+     * @Groups({"read"})
      */
     public function getCode()
     {
@@ -131,6 +134,7 @@ class Competition
 
     /**
      * @return string|null
+     * @Groups({"read"})
      */
     public function getName(): ?string
     {
@@ -150,6 +154,7 @@ class Competition
 
     /**
      * @return int|null
+     * @Groups({"read"})
      */
     public function getLeagueLevel(): ?int
     {
@@ -169,6 +174,7 @@ class Competition
 
     /**
      * @return Country|null
+     * @Groups({"read"})
      */
     public function getCountry(): ?Country
     {
@@ -188,6 +194,7 @@ class Competition
 
     /**
      * @return int|null
+     * @Groups({"read"})
      */
     public function getNumberTeams(): ?int
     {
@@ -207,6 +214,7 @@ class Competition
 
     /**
      * @return Collection|CompetitionSeason[]
+     * @Groups({"read"})
      */
     public function getCompetitionSeasons(): Collection
     {
@@ -246,6 +254,7 @@ class Competition
 
     /**
      * @return Federation|null
+     * @Groups({"read"})
      */
     public function getFederation(): ?Federation
     {
@@ -263,11 +272,19 @@ class Competition
         return $this;
     }
 
+    /**
+     * @return TeamType|null
+     * @Groups({"read"})
+     */
     public function getTeamType(): ?TeamType
     {
         return $this->team_type;
     }
 
+    /**
+     * @param TeamType|null $team_type
+     * @return Competition
+     */
     public function setTeamType(?TeamType $team_type): self
     {
         $this->team_type = $team_type;
@@ -275,11 +292,19 @@ class Competition
         return $this;
     }
 
+    /**
+     * @return string|null
+     * @Groups({"read"})
+     */
     public function getImage(): ?string
     {
         return $this->image;
     }
 
+    /**
+     * @param string|null $image
+     * @return Competition
+     */
     public function setImage(?string $image): self
     {
         $this->image = $image;
@@ -287,11 +312,19 @@ class Competition
         return $this;
     }
 
+    /**
+     * @return string|null
+     * @Groups({"read"})
+     */
     public function getSlug(): ?string
     {
         return $this->slug;
     }
 
+    /**
+     * @param string|null $slug
+     * @return Competition
+     */
     public function setSlug(?string $slug): self
     {
         $this->slug = $slug;
@@ -299,11 +332,19 @@ class Competition
         return $this;
     }
 
+    /**
+     * @return CompetitionType|null
+     * @Groups({"read"})
+     */
     public function getCompetitionType(): ?CompetitionType
     {
         return $this->competition_type;
     }
 
+    /**
+     * @param CompetitionType|null $competition_type
+     * @return Competition
+     */
     public function setCompetitionType(?CompetitionType $competition_type): self
     {
         $this->competition_type = $competition_type;
@@ -311,11 +352,19 @@ class Competition
         return $this;
     }
 
+    /**
+     * @return bool|null
+     * @Groups({"read"})
+     */
     public function getIsYouthCompetition(): ?bool
     {
         return $this->is_youth_competition;
     }
 
+    /**
+     * @param bool|null $is_youth_competition
+     * @return Competition
+     */
     public function setIsYouthCompetition(?bool $is_youth_competition): self
     {
         $this->is_youth_competition = $is_youth_competition;
@@ -323,11 +372,19 @@ class Competition
         return $this;
     }
 
+    /**
+     * @return bool|null
+     * @Groups({"read"})
+     */
     public function getIsFeatured(): ?bool
     {
         return $this->isFeatured;
     }
 
+    /**
+     * @param bool|null $isFeatured
+     * @return Competition
+     */
     public function setIsFeatured(?bool $isFeatured): self
     {
         $this->isFeatured = $isFeatured;

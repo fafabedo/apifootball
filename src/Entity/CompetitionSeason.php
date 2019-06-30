@@ -15,7 +15,7 @@ use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"season"}}
+ *     normalizationContext={"groups"={"read", "write"}}
  *     )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonRepository")
  * @ApiFilter(SearchFilter::class, properties={"id": "exact", "competition.id": "exact", "archive": "exact"})
@@ -177,6 +177,7 @@ class CompetitionSeason
 
     /**
      * @return Collection|CompetitionSeasonTeam[]
+     * @Groups({"read"})
      */
     public function getCompetitionSeasonTeams(): Collection
     {
