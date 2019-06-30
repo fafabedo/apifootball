@@ -137,7 +137,6 @@ class CompetitionSeason
 
     /**
      * @return Competition|null
-     * @Groups({"read"})
      */
     public function getCompetition(): ?Competition
     {
