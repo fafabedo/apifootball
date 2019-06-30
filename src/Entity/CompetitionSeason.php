@@ -177,7 +177,6 @@ class CompetitionSeason
 
     /**
      * @return Collection|CompetitionSeasonTeam[]
-     * @Groups({"read"})
      */
     public function getCompetitionSeasonTeams(): Collection
     {
