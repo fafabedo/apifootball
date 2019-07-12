@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *     normalizationContext={"groups"={"country"}}
  * )
  * @ORM\Entity(repositoryClass="App\Repository\CountryRepository")
- * @ApiFilter(SearchFilter::class, properties={"id": "exact", "name": "partial", "code": "partial"})
+ * @ApiFilter(SearchFilter::class, properties={"id": "exact", "name": "partial", "code": "partial", "active": "exact"})
  */
 class Country
 {

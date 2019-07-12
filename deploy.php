@@ -4,7 +4,7 @@ namespace Deployer;
 require 'recipe/symfony4.php';
 
 // Project name
-set('application', 'api.apifootball.tk');
+set('application', 'api.footballfc.com');
 
 // Project repository
 set('repository', 'git@github.com:fafabedo/apifootball.git');
@@ -31,7 +31,7 @@ add('writable_dirs', []);
 
 // Hosts
 set('default_stage', 'prod');
-host('api.apifootball.tk')
+host('api.footballfc.com')
     ->stage('prod')
     ->user('webdeploy')
     ->identityFile('~/.ssh/id_rsa')
@@ -40,7 +40,7 @@ host('api.apifootball.tk')
     
 // Tasks
 
-desc('Deploy ApiFootball.tk');
+desc('Deploy ApiFootballfc.com');
 task('deploy', [
     'deploy:info',
     'deploy:prepare',

@@ -33,6 +33,11 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
     private $competitionSeason;
 
     /**
+     * @var bool
+     */
+    private $featured = false;
+
+    /**
      * @var Player[]
      */
     private $players;
@@ -91,6 +96,24 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
     {
         $this->competitionSeason = $competitionSeason;
 
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFeatured(): bool
+    {
+        return $this->featured;
+    }
+
+    /**
+     * @param bool $featured
+     * @return PlayerCrawler
+     */
+    public function setFeatured(bool $featured): self
+    {
+        $this->featured = $featured;
         return $this;
     }
 
@@ -204,6 +227,11 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
     private function getSeasonTeamPlayerList()
     {
         switch (true) {
+            case ($this->isFeatured()):
+                return $this->getDoctrine()
+                    ->getRepository(CompetitionSeasonTeamPlayer::class)
+                    ->findByFeatured($this->getCompetitionSeason());
+                break;
             case ($this->getCompetitionSeason() instanceof CompetitionSeason):
                 return $this->getDoctrine()
                     ->getRepository(CompetitionSeasonTeamPlayer::class)

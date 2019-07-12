@@ -99,6 +99,21 @@ class CompetitionSeasonTeamPlayerRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findByFeatured($archive = false)
+    {
+        return $this->createQueryBuilder('cstp')
+            ->innerJoin('cstp.player', 'p')
+            ->innerJoin('cstp.competition_season_team', 'cst')
+            ->innerJoin('cst.competition_season', 'cs')
+            ->innerJoin('cs.competition', 'c')
+            ->where('c.isFeatured = :featured AND cs.archive = :archive')
+            ->setParameter('featured', true)
+            ->setParameter('archive', $archive)
+            ->orderBy('cstp.id', 'asc')
+            ->getQuery()
+            ->getResult();
+    }
+
     // /**
     //  * @return CompetitionSeasonTeamPlayer[] Returns an array of CompetitionSeasonTeamPlayer objects
     //  */
