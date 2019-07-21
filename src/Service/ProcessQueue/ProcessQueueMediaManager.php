@@ -77,7 +77,7 @@ class ProcessQueueMediaManager
         $processQueueMedia = $this->getDoctrine()
             ->getRepository(ProcessQueueMedia::class)
             ->findByFilename($filename);
-        if (!$processQueueMedia instanceof ProcessQueueMedia) {
+        if ($processQueueMedia instanceof ProcessQueueMedia) {
             $em = $this->getDoctrine()->getManager();
             $em->remove($processQueueMedia);
             $em->flush();

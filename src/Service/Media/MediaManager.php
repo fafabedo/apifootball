@@ -56,7 +56,9 @@ class MediaManager
     public function persistMedia($sourceUrl, $destination)
     {
         try {
-            $filenameFilesystem = $this->getKernel()->getProjectDir() . $destination;
+            $filenameFilesystem = $this->getKernel()->getProjectDir()
+                . '/public/files'
+                . $destination;
             if (file_exists($filenameFilesystem)) {
                 return true;
             }
@@ -66,7 +68,7 @@ class MediaManager
             ]);
         }
         catch (\Exception $e) {
-            return false;
+            throw new \Exception('Error persisting filename ' . $filenameFilesystem);
         }
         return true;
     }

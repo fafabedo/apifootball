@@ -27,7 +27,7 @@ class ProcessQueueMediaRepository extends ServiceEntityRepository
     public function findByFilename($filename)
     {
         return $this->createQueryBuilder('pqm')
-            ->andWhere('pqm.filename = :filename')
+            ->andWhere('pqm.filename like :filename')
             ->setParameter('filename', $filename)
             ->setMaxResults(1)
             ->getQuery()
