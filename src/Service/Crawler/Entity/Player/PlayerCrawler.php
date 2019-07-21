@@ -17,6 +17,7 @@ use Cocur\Slugify\Slugify;
 
 class PlayerCrawler extends ContentCrawler implements CrawlerInterface
 {
+    const PLAYER_FOLDER = 'player';
     /**
      * @var Team
      */
@@ -130,6 +131,7 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
         $index = 1;
         foreach ($seasonTeamPlayers as $seasonTeamPlayer) {
             if (!$this->validOffset($index)) {
+                $index++;
                 continue;
             }
             $player = $seasonTeamPlayer->getPlayer();
@@ -194,6 +196,9 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
             $jerseyNumber = PlayerProfileTool::getJerseyNumber($this->getCrawler());
             $profilePicture = PlayerProfileTool::getProfilePictureFilename($this->getCrawler());
 
+            $filename = $this
+                ->processImageUrl($profilePicture, $tmkCode, self::PLAYER_FOLDER);
+
             $fullName = PlayerProfileTool::getFullName($profileContainer);
             $birthDay = PlayerProfileTool::getBirthday($profileContainer);
             $placeBirth = PlayerProfileTool::getPlaceBirth($profileContainer);
@@ -204,6 +209,7 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
             $player->setName($name);
             $player->setJerseyNumber($jerseyNumber);
             $player->setFullName($fullName);
+            $player->setPicture($filename);
             if (isset($birthDay)) {
                 $timestamp = strtotime($birthDay);
                 $birthDate = new \DateTime();
@@ -230,7 +236,7 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
             case ($this->isFeatured()):
                 return $this->getDoctrine()
                     ->getRepository(CompetitionSeasonTeamPlayer::class)
-                    ->findByFeatured($this->getCompetitionSeason());
+                    ->findByFeatured();
                 break;
             case ($this->getCompetitionSeason() instanceof CompetitionSeason):
                 return $this->getDoctrine()

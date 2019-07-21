@@ -107,7 +107,7 @@ class CompetitionSeasonTeamPlayerRepository extends ServiceEntityRepository
             ->innerJoin('cst.competition_season', 'cs')
             ->innerJoin('cs.competition', 'c')
             ->where('c.isFeatured = :featured AND cs.archive = :archive')
-            ->setParameter('featured', true)
+            ->setParameter('featured', 1)
             ->setParameter('archive', $archive)
             ->orderBy('cstp.id', 'asc')
             ->getQuery()
