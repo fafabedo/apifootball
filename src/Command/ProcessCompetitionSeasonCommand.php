@@ -147,17 +147,16 @@ class ProcessCompetitionSeasonCommand extends Command
             ;
             $this
                 ->getCompetitionSeasonCrawler()
-                ->setCompetition($competition);
+                ->process();
         }
 
-        $featured = $input->hasOption('featured');
+        $featured = (bool) $input->hasOption('featured');
         $force = $input->hasOption('force');
 
         $io->title('Competition Seasons...');
         $this
             ->getCompetitionSeasonCrawler()
-            ->setCompetition($competition)
-//            ->setFeatured($featured)
+            ->setFeatured($featured)
             ->process()
             ->saveData()
         ;
@@ -166,8 +165,7 @@ class ProcessCompetitionSeasonCommand extends Command
         $io->title('Competition Fixture...');
         $this
             ->getCompetitionSeasonMatchCrawler()
-            ->setCompetition($competition)
-//            ->setFeatured($featured)
+            ->setFeatured($featured)
             ->setForceUpdate($force)
             ->process()
             ->saveData()

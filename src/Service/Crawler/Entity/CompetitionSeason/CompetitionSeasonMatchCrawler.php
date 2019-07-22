@@ -189,13 +189,15 @@ class CompetitionSeasonMatchCrawler extends ContentCrawler implements CrawlerInt
                     ->processPath($preparedUrl);
                 switch ($competitionTypeId) {
                     case 1:
-                        $this->competitionMatches = $this->processFixtureTournamentHtml($competitionSeason);
+                        $matches = $this->processFixtureTournamentHtml($competitionSeason);
+
                         break;
                     default:
                     case 2:
-                        $this->competitionMatches = $this->processFixtureLeagueHtml($competitionSeason);
+                        $matches = $this->processFixtureLeagueHtml($competitionSeason);
                         break;
                 }
+                $this->competitionMatches = array_merge($this->competitionMatches, $matches);
             } catch (\Exception $e) {
                 throw new \Exception('Competition code ('.$tmkCode.'):'.$e->getMessage());
             }

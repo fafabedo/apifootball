@@ -102,10 +102,14 @@ class ProcessQueueManager
         $processQueueLog = new ProcessQueueLog();
         $processQueueLog->setData([$message]);
         $processQueueLog->setType($type);
-        $processQueueOperation->addProcessQueueLog($processQueueLog);
-
-        $this->getEm()->persist($processQueueOperation);
-        $this->getEm()->flush();
+        $processQueueLog->setProcessQueueOperation($processQueueOperation);
+//        $processQueueOperation->addProcessQueueLog($processQueueLog);
+        try {
+            $this->getEm()->persist($processQueueLog);
+            $this->getEm()->flush();
+        }
+        catch (\Exception $e) {
+        }
 
         return $this;
     }

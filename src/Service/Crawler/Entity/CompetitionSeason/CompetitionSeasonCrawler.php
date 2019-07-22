@@ -63,8 +63,9 @@ class CompetitionSeasonCrawler extends ContentCrawler implements CrawlerInterfac
 
     /**
      * @param mixed $country
+     * @return CompetitionSeasonCrawler
      */
-    public function setCountry($country): void
+    public function setCountry($country): CompetitionSeasonCrawler
     {
         $this->country = $country;
     }
