@@ -35,4 +35,31 @@ class TeamOverviewTool
         }
         return null;
     }
+
+    /**
+     * @param Crawler $node
+     * @return mixed|null
+     */
+    static public function getTeamImage(Crawler $node)
+    {
+        $imageTag = $node->filter('div.dataHeader')
+            ->filter('.dataBild')
+            ->html();
+        if (preg_match('/<img.+src="([^"]+)"/', $imageTag, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
+    /**
+     * @param Crawler $node
+     * @return mixed|null
+     */
+    static public function getCanonical(Crawler $node)
+    {
+        if (preg_match('/<link.+"canonical".+href="([^"]+)"/', $node->html(), $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
 }

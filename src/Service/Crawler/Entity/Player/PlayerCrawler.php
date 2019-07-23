@@ -115,6 +115,7 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
     public function setFeatured(bool $featured): self
     {
         $this->featured = $featured;
+
         return $this;
     }
 
@@ -141,6 +142,7 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
             $index++;
         }
         $this->finishProgressBar();
+
         return $this;
     }
 
@@ -165,6 +167,7 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
         }
         $em->flush();
         $this->finishProgressBar();
+
         return $this;
     }
 
@@ -180,16 +183,17 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
         $slugify = new Slugify();
         $slug = $slugify->slugify($player->getName());
         $tmkCode = $player->getTmkCode();
+        if ($tmkCode === '341429') {
+            $tmp = 1;
+        }
         $preparedUrl = $this->preparePath($playerProfileUrl->getUrl(), [$slug, $tmkCode]);
         $lifetime = $this
             ->getCacheLifetime()
             ->getLifetime(CacheLifetime::CACHE_PLAYER);
-        $this
-            ->setLifetime($lifetime)
-            ->processPath($preparedUrl)
-        ;
-
         try {
+            $this
+                ->setLifetime($lifetime)
+                ->processPath($preparedUrl);
             $this->getCrawler()->html();
             $profileContainer = PlayerProfileTool::getContainerProfile($this->getCrawler());
             $name = PlayerProfileTool::getName($this->getCrawler());
@@ -219,10 +223,10 @@ class PlayerCrawler extends ContentCrawler implements CrawlerInterface
             $player->setPlaceOfBirth($placeBirth);
             $player->setHeight($height);
             $player->setFoot($foot);
+        } catch (\Exception $e) {
+            throw new \Exception('Player code ('.$player->getTmkCode().'):'.$e->getMessage());
         }
-        catch (\Exception $e) {
-            throw new \Exception('Player code (' . $player->getTmkCode() . '):' .$e->getMessage());
-        }
+
         return $player;
     }
 

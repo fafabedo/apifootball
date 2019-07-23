@@ -59,6 +59,12 @@ class MediaManager
             $filenameFilesystem = $this->getKernel()->getProjectDir()
                 . '/public/files'
                 . $destination;
+            $dirname = dirname($filenameFilesystem);
+            if (!file_exists($dirname)) {
+                if (!mkdir($dirname, 0777, TRUE)) {
+                    throw new \Exception('Error creating folder ' . $dirname);
+                }
+            }
             if (file_exists($filenameFilesystem)) {
                 return true;
             }

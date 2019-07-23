@@ -68,33 +68,9 @@ class ProcessTeamCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $country = null;
-        if ($input->getOption('country')) {
-            $countryId = $input->getOption('country');
-            $country = $this->getDoctrine()
-                ->getRepository(Country::class)
-                ->find($countryId);
-        }
-
-        $level = 1;
-        if ($input->getOption('level')) {
-            $level = $input->getOption('level');
-        }
-        $crawler = $this->getTeamCrawler();
-
-        if ($input->hasOption('competition')) {
-            $id = $input->getOption('competition');
-            $competition = $this->getDoctrine()
-                ->getRepository(Competition::class)
-                ->find($id);
-            $crawler->setCompetition($competition);
-        }
-
-
-        if ($country instanceof Country) {
-            $crawler->setCountry($country);
-        }
-        $crawler->setLevel($level)
+        $this->getTeamCrawler()
+            ->setFeatured(true)
+            ->setLimit(20)
             ->setOutput($output)
             ->process()
             ->saveData();

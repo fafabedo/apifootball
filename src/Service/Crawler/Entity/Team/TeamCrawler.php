@@ -3,6 +3,7 @@
 namespace App\Service\Crawler\Entity\Team;
 
 use App\Entity\Competition;
+use App\Entity\CompetitionSeasonTeam;
 use App\Entity\Country;
 use App\Entity\Team;
 use App\Service\Cache\CacheLifetime;
@@ -10,6 +11,7 @@ use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
 use App\Tool\TransferMkt\CompetitionMainPageTool;
+use App\Tool\TransferMkt\Team\TeamOverviewTool;
 use App\Tool\TypeTool;
 use App\Tool\UrlTool;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -22,6 +24,7 @@ use Symfony\Component\DomCrawler\Crawler;
  */
 class TeamCrawler extends ContentCrawler implements CrawlerInterface
 {
+    const TEAM_FOLDER = 'team';
     /**
      * @var Team[]
      */
@@ -40,7 +43,12 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
     /**
      * @var integer
      */
-    private $level = 1;
+    private $level = 2;
+
+    /**
+     * @var bool
+     */
+    private $featured = false;
 
     /**
      * @return mixed
@@ -97,48 +105,60 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
     }
 
     /**
+     * @return bool
+     */
+    public function isFeatured(): bool
+    {
+        return $this->featured;
+    }
+
+    /**
+     * @param bool $featured
+     * @return TeamCrawler
+     */
+    public function setFeatured(bool $featured): TeamCrawler
+    {
+        $this->featured = $featured;
+        return $this;
+    }
+
+    /**
      * @return CrawlerInterface
      * @throws \App\Exception\InvalidMetadataSchema
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
      */
     public function process(): CrawlerInterface
     {
-        $teamCollection = $this->getConfigSchema('crawler.team.collection.url');
-        $competitions = $this->getCompetitions();
+        $competitionTeams = $this->getCompetitionTeams();
 
-        $this->createProgressBar('Crawling competitions to scope', count($competitions));
+        $this->createProgressBar('Crawling competitions to scope', count($competitionTeams));
 
-        foreach ($competitions as $competition) {
-            $code = $competition->getCode();
-            $url = $this->preparePath($teamCollection->getUrl(), [$code]);
+        foreach ($competitionTeams as $competitionTeam) {
+            $team = $competitionTeam->getTeam();
+            $metadata = MetadataSchemaResources::createSchema($team->getMetadata());
+            $preparedUrl = $metadata->getUrl();
             $this
                 ->setLifetime($this->getCacheLifetime()->getLifetime(CacheLifetime::CACHE_TEAM))
-                ->processPath($url);
-            if ($competition->getCountry() instanceof Country) {
-                $this
-                    ->setCompetition($competition)
-                    ->setCountry($competition->getCountry());
-            }
-            $teamCodes = CompetitionMainPageTool::getTeamsFromPage($this->getCrawler());
-            $teams = $this->processTeamCodes($competition, $teamCodes);
-            $this->teams = array_merge($this->teams, $teams);
+                ->processPath($preparedUrl);
 
+            $fullName = TeamOverviewTool::getFullName($this->getCrawler());
+            $competitionLink = TeamOverviewTool::getCanonical($this->getCrawler());
+            $imageUrl = TeamOverviewTool::getTeamImage($this->getCrawler());
+            $filename = $this
+                ->processImageUrl($imageUrl, $team->getTmkCode(), self::TEAM_FOLDER);
+            $team->setImage($filename);
+            $team->setName($fullName);
+            $metadataSchema = new MetadataSchemaResources();
+            $metadataSchema->setUrl($competitionLink);
+            $team->setMetadata($metadataSchema->getSchema());
+            $this->teams[] = $team;
             $this->advanceProgressBar();
         }
 
         $this->finishProgressBar();
-
-        if (!empty($this->teams)) {
-            $this->createProgressBar('Processing clubs', count($this->teams));
-            foreach ($this->teams as $team) {
-                $metadata = $team->getMetadata();
-                $team->setMetadata($metadata);
-                $this->advanceProgressBar();
-            }
-            $this->finishProgressBar();
-        }
         return $this;
     }
 
@@ -171,122 +191,31 @@ class TeamCrawler extends ContentCrawler implements CrawlerInterface
     }
 
     /**
-     * @param Competition $competition
-     * @param $teamCodes
-     * @return array
-     * @throws \App\Exception\InvalidMetadataSchema
-     * @throws \App\Exception\InvalidMethodException
-     * @throws \App\Exception\InvalidURLException
+     * @return CompetitionSeasonTeam[]/array
+     * @throws \Exception
      */
-    private function processTeamCodes(Competition $competition, $teamCodes): array
+    public function getCompetitionTeams(): array
     {
-        $globalSchema = $this->getConfigSchema('crawler.global.url');
-        $teams = [];
-        foreach ($teamCodes as $item) {
-            $url = $globalSchema->getUrl() . $item['url'];
-            $tmkCode = UrlTool::getParamFromUrl($url,4);
-            $team = $this
-                ->getDoctrine()
-                ->getRepository(Team::class)
-                ->findOneByTmkCode($tmkCode);
-            if (!$team instanceof Team) {
-                $team = new Team();
-                $team->setTmkCode($tmkCode);
-            }
-            $team->setCountry($this->getCompetition()->getCountry());
-            $team->setName($item['name']);
-            $team->setShortname($item['shortname']);
-            $team->setTeamType(TypeTool::getClubTypeTeam($this->getDoctrine()));
-            $team->setIsYouthTeam($competition->getIsYouthCompetition() ? true : false);
-            $metadataSchema = new MetadataSchemaResources();
-            $metadataSchema->setUrl($url);
-            $team->setMetadata($metadataSchema->getSchema());
-            $teams[] = $team;
+        switch (true) {
+            case $this->isFeatured():
+                return $this->getDoctrine()
+                    ->getRepository(CompetitionSeasonTeam::class)
+                    ->findByFeaturedCompetition();
+                break;
+            case ($this->getCountry() instanceof Country):
+                return $this->getDoctrine()
+                    ->getRepository(CompetitionSeasonTeam::class)
+                    ->findByCountry($this->getCountry());
+                break;
+            case ($this->getCompetition() instanceof Competition):
+                return $this->getDoctrine()
+                    ->getRepository(CompetitionSeasonTeam::class)
+                    ->findByCompetition($this->getCompetition());
+                break;
+            default:
+                return [];
+                break;
         }
-        return $teams;
-    }
-
-    /**
-     * @return array
-     */
-    private function getListTeamFromContent()
-    {
-        $globalConfig =$this
-            ->getConfigManager()
-            ->getValue('crawler.global.url')
-        ;
-        return $this
-            ->getCrawler()
-            ->filterXPath('//*[@id="yw1"]//tbody//tr')
-            ->each(function (Crawler $node, $i) use($globalConfig) {
-                $href = $node
-                    ->each(function (Crawler $nodeChild, $i) {
-                        $filtered = $nodeChild->filter('td')->html();
-                        preg_match('/href="([a-zA-Z0-9|_|\/|-]+)"/i', $filtered, $matches);
-                        if (!isset($matches[1])) {
-                            return '';
-                        }
-                        return $matches[1];
-                    });
-
-                $url = $href[0];
-                $names = $node->filterXPath('//a')
-                    ->each(function (Crawler $nodeChild, $i) {
-                        return $nodeChild->text();
-                    });
-                $name = [];
-                foreach ($names as $text) {
-                    if (!empty($text)) {
-                        $name[] = $text;
-                    }
-                    if (count($name) == 2) {
-                        break;
-                    }
-                }
-                preg_match('/([^\/]+)\/[^\/]+\/[^\/]+$/', $url, $codeMatches);
-
-                $team = $tmkCode = null;
-                if (isset($codeMatches[1])) {
-                    $tmkCode = $codeMatches[1];
-                    $team = $this
-                        ->getDoctrine()
-                        ->getRepository(Team::class)
-                        ->findOneByTmkCode($tmkCode);
-                }
-                if (!$team instanceof Team) {
-                    $team = new Team();
-                    $team->setTmkCode($tmkCode);
-                }
-                $team->setCountry($this->getCompetition()->getCountry());
-                $team->setName($name[0]);
-                $team->setShortname($name[1]);
-                $team->setTeamType(TypeTool::getClubTypeTeam($this->getDoctrine()));
-                $team->setIsYouthTeam(false);
-                $metadataSchema = new MetadataSchemaResources();
-                $metadataSchema->setUrl($globalConfig['url'] . $url);
-                $team->setMetadata($metadataSchema->getSchema());
-
-                return $team;
-            });
-    }
-
-    /**
-     * @return Competition[]|object[]
-     */
-    public function getCompetitions(): array
-    {
-        $filters = [];
-        if ($this->getCountry() instanceof Country) {
-            $filters['country'] = $this->getCountry();
-        }
-        $levels = range(1, $this->getLevel());
-        $filters['league_level'] = $levels;
-        if ($this->getCompetition() instanceof Competition) {
-            $filters['id'] = $this->getCompetition();
-        }
-        return $this->getDoctrine()
-            ->getRepository(Competition::class)
-            ->findBy($filters);
     }
 
 }

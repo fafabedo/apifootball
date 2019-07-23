@@ -11,7 +11,6 @@ use App\Service\Cache\CacheLifetime;
 use App\Service\Crawler\ContentCrawler;
 use App\Service\Crawler\CrawlerInterface;
 use App\Service\Metadata\MetadataSchemaResources;
-use App\Tool\TransferMkt\CompetitionMainPageTool;
 use App\Tool\TransferMkt\Team\TeamOverviewTool;
 use App\Tool\TypeTool;
 use App\Tool\UrlTool;
@@ -22,6 +21,7 @@ use App\Tool\UrlTool;
  */
 class TeamByCodeCrawler extends ContentCrawler
 {
+    const TEAM_FOLDER = 'team';
     /**
      * @var Team
      */
@@ -56,6 +56,7 @@ class TeamByCodeCrawler extends ContentCrawler
      * @throws \App\Exception\InvalidMethodException
      * @throws \App\Exception\InvalidURLException
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function process(): CrawlerInterface
     {
@@ -80,17 +81,24 @@ class TeamByCodeCrawler extends ContentCrawler
         }
         $name = TeamOverviewTool::getFullName($this->getCrawler());
         $competitionLink = TeamOverviewTool::getCompetitionLink($this->getCrawler());
+        $imageUrl = TeamOverviewTool::getTeamImage($this->getCrawler());
         $competitionTmkCode = UrlTool::getParamFromUrl($competitionLink, 3);
         $competition = $this
             ->getDoctrine()
             ->getRepository(Competition::class)
             ->findOneByTmkCode($competitionTmkCode);
 
+        $filename = $this
+            ->processImageUrl($imageUrl, $this->getTmkCode(), self::TEAM_FOLDER);
+
         if ($competition instanceof Competition) {
             $team->setCountry($competition->getCountry());
         }
         $team->setName($name);
         $team->setShortname($name);
+        if (isset($filename)) {
+            $team->setImage($filename);
+        }
         $team->setTeamType(TypeTool::getClubTypeTeam($this->getDoctrine()));
         $team->setIsYouthTeam( false);
         $metadataSchema = new MetadataSchemaResources();

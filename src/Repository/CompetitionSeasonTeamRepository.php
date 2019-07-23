@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Competition;
 use App\Entity\CompetitionSeason;
 use App\Entity\CompetitionSeasonTeam;
+use App\Entity\Country;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
@@ -59,6 +60,22 @@ class CompetitionSeasonTeamRepository extends ServiceEntityRepository
             ->distinct()
             ->getQuery()
             ->getResult();
+    }
+
+    public function findByCountry(Country $country, $archive = false)
+    {
+        return $this->createQueryBuilder('cst')
+            ->innerJoin('cst.competition_season', 'cs')
+            ->innerJoin('cs.competition', 'c')
+            ->where('c.country : country')
+            ->andWhere('cs.archive = :archive')
+            ->setParameter('country', $country)
+            ->setParameter('archive', $archive)
+            ->orderBy('cst.id', 'asc')
+            ->distinct()
+            ->getQuery()
+            ->getResult();
+
     }
 
     // /**
