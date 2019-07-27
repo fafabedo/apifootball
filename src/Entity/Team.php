@@ -14,7 +14,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"read"}, "enable_max_depth"=true}
+ *     normalizationContext={"groups"={"team"}, "enable_max_depth"=true}
  * )
  * @ORM\Entity(repositoryClass="App\Repository\TeamRepository")
  * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "word_start", "competition.id": "exact", "team_type.id": "exact"})
@@ -106,7 +106,7 @@ class Team
 
     /**
      * @return int|null
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getId(): ?int
     {
@@ -115,7 +115,7 @@ class Team
 
     /**
      * @return string|null
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getName(): ?string
     {
@@ -135,7 +135,7 @@ class Team
 
     /**
      * @return string|null
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getShortname(): ?string
     {
@@ -155,7 +155,7 @@ class Team
 
     /**
      * @return mixed
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getCompetition()
     {
@@ -174,7 +174,7 @@ class Team
 
     /**
      * @return mixed
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getCode()
     {
@@ -193,7 +193,7 @@ class Team
 
     /**
      * @return Country
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getCountry(): ?Country
     {
@@ -251,7 +251,7 @@ class Team
 
     /**
      * @return TeamType|null
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getTeamType(): ?TeamType
     {
@@ -271,7 +271,7 @@ class Team
 
     /**
      * @return bool|null
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getIsYouthTeam(): ?bool
     {
@@ -291,7 +291,7 @@ class Team
 
     /**
      * @return string|null
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getImage(): ?string
     {
@@ -311,7 +311,7 @@ class Team
 
     /**
      * @return string|null
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getSlug(): ?string
     {
@@ -331,7 +331,7 @@ class Team
 
     /**
      * @return Collection|TeamCoachingStaff[]
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getTeamCoachingStaff(): Collection
     {
@@ -371,7 +371,7 @@ class Team
 
     /**
      * @return Collection|TeamAward[]
-     * @Groups({"team", "season_match", "season_match_team"})
+     * @Groups({"team"})
      */
     public function getTeamAwards(): Collection
     {
