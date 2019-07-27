@@ -8,6 +8,7 @@ trait MetadataTrait
 {
     /**
      * @ORM\Column(type="array", nullable=true)
+     * @Groups({"global"})
      */
     private $metadata;
 

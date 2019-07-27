@@ -4,6 +4,7 @@
 namespace App\Traits;
 
 use Gedmo\Mapping\Annotation as Gedmo;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 trait TimestampableTrait
 {
@@ -23,6 +24,7 @@ trait TimestampableTrait
 
     /**
      * @return \DateTime|null
+     * @Groups({"global"})
      */
     public function getCreated(): ?\DateTime
     {
@@ -39,6 +41,7 @@ trait TimestampableTrait
 
     /**
      * @return \DateTime|null
+     * @Groups({"global"})
      */
     public function getUpdated(): ?\DateTime
     {

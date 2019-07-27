@@ -9,10 +9,13 @@ use App\Traits\TmkEntityTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *     normalizationContext={"groups"={"player"}, "enable_max_depth"=true}
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\PlayerRepository")
  */
 class Player
@@ -126,6 +129,7 @@ class Player
 
     /**
      * @return int|null
+     * @Groups({"player"})
      */
     public function getId(): ?int
     {
@@ -134,6 +138,7 @@ class Player
 
     /**
      * @return string|null
+     * @Groups({"player"})
      */
     public function getName(): ?string
     {
@@ -153,6 +158,7 @@ class Player
 
     /**
      * @return mixed
+     * @Groups({"player"})
      */
     public function getShortname()
     {
@@ -171,6 +177,7 @@ class Player
 
     /**
      * @return \DateTimeInterface|null
+     * @Groups({"player"})
      */
     public function getBirthday(): ?\DateTimeInterface
     {
@@ -190,6 +197,7 @@ class Player
 
     /**
      * @return string|null
+     * @Groups({"player"})
      */
     public function getPlaceOfBirth(): ?string
     {
@@ -209,6 +217,7 @@ class Player
 
     /**
      * @return float|null
+     * @Groups({"player"})
      */
     public function getHeight(): ?float
     {
@@ -246,6 +255,7 @@ class Player
 
     /**
      * @return mixed
+     * @Groups({"player"})
      */
     public function getPicture()
     {
@@ -264,6 +274,7 @@ class Player
 
     /**
      * @return string|null
+     * @Groups({"player"})
      */
     public function getFoot(): ?string
     {
@@ -282,6 +293,7 @@ class Player
 
     /**
      * @return string|null
+     * @Groups({"player"})
      */
     public function getOutfitter(): ?string
     {
@@ -300,6 +312,7 @@ class Player
 
     /**
      * @return mixed
+     * @Groups({"player"})
      */
     public function getAgent()
     {
@@ -318,6 +331,7 @@ class Player
 
     /**
      * @return Collection|PlayerPosition[]
+     * @Groups({"player"})
      */
     public function getPlayerPositions(): Collection
     {
@@ -357,6 +371,7 @@ class Player
 
     /**
      * @return Collection|PlayerContract[]
+     * @Groups({"player"})
      */
     public function getPlayerContracts(): Collection
     {
@@ -396,6 +411,7 @@ class Player
 
     /**
      * @return int|null
+     * @Groups({"player"})
      */
     public function getJerseyNumber(): ?int
     {
@@ -415,6 +431,7 @@ class Player
 
     /**
      * @return Collection|PlayerMarketValue[]
+     * @Groups({"player"})
      */
     public function getPlayerMarketValues(): Collection
     {
@@ -454,6 +471,7 @@ class Player
 
     /**
      * @return string|null
+     * @Groups({"player"})
      */
     public function getFullName(): ?string
     {

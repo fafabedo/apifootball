@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Annotation\ApiFilter;
+use ApiPlatform\Core\Annotation\ApiSubresource;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 use App\Traits\MetadataTrait;
 use App\Traits\TmkEntityTrait;
@@ -11,9 +12,12 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *     normalizationContext={"groups"={"competition", "country", "type"}, "enable_max_depth"=true}
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionRepository")
  * @ApiFilter(SearchFilter::class, properties={"id": "exact", "country.id": "exact", "name": "partial", "team_type.id": "exact", "federation.id": "exact", "isFeatured":"exact"})
  */
@@ -47,6 +51,7 @@ class Competition
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Country")
      * @ORM\JoinColumn(nullable=true)
+     * @MaxDepth(1)
      */
     private $country;
 
@@ -57,6 +62,7 @@ class Competition
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeason", mappedBy="competition", cascade={"persist", "remove"})
+     * @ApiSubresource()
      */
     private $competitionSeasons;
 
@@ -106,7 +112,7 @@ class Competition
 
     /**
      * @return int|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getId(): ?int
     {
@@ -115,7 +121,6 @@ class Competition
 
     /**
      * @return mixed
-     * @Groups({"read"})
      */
     public function getCode()
     {
@@ -134,7 +139,7 @@ class Competition
 
     /**
      * @return string|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getName(): ?string
     {
@@ -154,7 +159,7 @@ class Competition
 
     /**
      * @return int|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getLeagueLevel(): ?int
     {
@@ -174,7 +179,7 @@ class Competition
 
     /**
      * @return Country|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getCountry(): ?Country
     {
@@ -194,7 +199,7 @@ class Competition
 
     /**
      * @return int|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getNumberTeams(): ?int
     {
@@ -254,7 +259,7 @@ class Competition
 
     /**
      * @return Federation|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getFederation(): ?Federation
     {
@@ -274,7 +279,7 @@ class Competition
 
     /**
      * @return TeamType|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getTeamType(): ?TeamType
     {
@@ -294,7 +299,7 @@ class Competition
 
     /**
      * @return string|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getImage(): ?string
     {
@@ -314,7 +319,7 @@ class Competition
 
     /**
      * @return string|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getSlug(): ?string
     {
@@ -334,7 +339,7 @@ class Competition
 
     /**
      * @return CompetitionType|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getCompetitionType(): ?CompetitionType
     {
@@ -354,7 +359,7 @@ class Competition
 
     /**
      * @return bool|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getIsYouthCompetition(): ?bool
     {
@@ -374,7 +379,7 @@ class Competition
 
     /**
      * @return bool|null
-     * @Groups({"read"})
+     * @Groups({"competition"})
      */
     public function getIsFeatured(): ?bool
     {

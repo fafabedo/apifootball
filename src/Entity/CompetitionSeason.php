@@ -15,7 +15,7 @@ use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"read", "write"}}
+ *     normalizationContext={"groups"={"season"}, "enable_max_depth"=true}
  *     )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonRepository")
  * @ApiFilter(SearchFilter::class, properties={"id": "exact", "competition.id": "exact", "archive": "exact"})
@@ -88,7 +88,7 @@ class CompetitionSeason
 
     /**
      * @return int|null
-     * @Groups({"read"})
+     * @Groups({"season", "season_match", "season_match_team"})
      */
     public function getId(): ?int
     {
@@ -97,7 +97,7 @@ class CompetitionSeason
 
     /**
      * @return \DateTimeInterface|null
-     * @Groups({"read"})
+     * @Groups({"season", "season_match", "season_match_team"})
      */
     public function getStartSeason(): ?\DateTimeInterface
     {
@@ -117,7 +117,7 @@ class CompetitionSeason
 
     /**
      * @return \DateTimeInterface|null
-     * @Groups({"read"})
+     * @Groups({"season", "season_match", "season_match_team"})
      */
     public function getEndSeason(): ?\DateTimeInterface
     {
@@ -137,6 +137,7 @@ class CompetitionSeason
 
     /**
      * @return Competition|null
+     * @Groups({"season", "season_match", "season_match_team"})
      */
     public function getCompetition(): ?Competition
     {
@@ -156,7 +157,7 @@ class CompetitionSeason
 
     /**
      * @return bool|null
-     * @Groups({"read"})
+     * @Groups({"season", "season_match", "season_match_team"})
      */
     public function getArchive(): ?bool
     {
@@ -176,7 +177,6 @@ class CompetitionSeason
 
     /**
      * @return Collection|CompetitionSeasonTeam[]
-     * @Groups({"read"})
      */
     public function getCompetitionSeasonTeams(): Collection
     {

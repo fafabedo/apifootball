@@ -13,7 +13,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"country"}}
+ *     normalizationContext={"groups"={"country"}, "enable_max_depth"=true}
  * )
  * @ORM\Entity(repositoryClass="App\Repository\CountryRepository")
  * @ApiFilter(SearchFilter::class, properties={"id": "exact", "name": "partial", "code": "partial", "active": "exact"})
@@ -57,7 +57,7 @@ class Country
 
     /**
      * @return int|null
-     * @Groups({"team", "country"})
+     * @Groups({"country"})
      */
     public function getId(): ?int
     {
@@ -66,7 +66,7 @@ class Country
 
     /**
      * @return string|null
-     * @Groups({"team", "country"})
+     * @Groups({"country"})
      */
     public function getName(): ?string
     {
@@ -86,7 +86,7 @@ class Country
 
     /**
      * @return mixed
-     * @Groups({"team", "country"})
+     * @Groups({"country"})
      */
     public function getActive()
     {
@@ -105,7 +105,7 @@ class Country
 
     /**
      * @return mixed
-     * @Groups({"team", "country"})
+     * @Groups({"country"})
      */
     public function getCode()
     {

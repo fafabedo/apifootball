@@ -9,10 +9,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"season"}}
+ *     normalizationContext={"groups"={"season_team", "team"}, "enable_max_depth"=true}
  *     )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonTeamRepository")
  */
@@ -24,14 +25,13 @@ class CompetitionSeasonTeam
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="bigint")
-     * @Groups({"season"})
+     * @Groups({"read"})
      */
     private $id;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\CompetitionSeason", inversedBy="competitionSeasonTeams")
      * @ORM\JoinColumn(onDelete="CASCADE")
-     * @Groups({"season"})
      */
     private $competition_season;
 
@@ -43,7 +43,6 @@ class CompetitionSeasonTeam
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTeamPlayer", mappedBy="competition_season_team")
-     * @Groups({"season"})
      * @ApiSubresource()
      */
     private $competitionSeasonTeamPlayers;
@@ -63,6 +62,7 @@ class CompetitionSeasonTeam
 
     /**
      * @return int|null
+     * @Groups({"season_team"})
      */
     public function getId(): ?int
     {
@@ -90,6 +90,8 @@ class CompetitionSeasonTeam
 
     /**
      * @return Team|null
+     * @Groups({"season_team"})
+     * @MaxDepth(1)
      */
     public function getTeam(): ?Team
     {
@@ -148,7 +150,7 @@ class CompetitionSeasonTeam
 
     /**
      * @return string|null
-     * @Groups({"season"})
+     * @Groups({"season_team"})
      */
     public function getGroupName(): ?string
     {

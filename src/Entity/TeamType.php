@@ -7,7 +7,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *     normalizationContext={"groups"={"type"}, "enable_max_depth"=true}
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\TeamTypeRepository")
  */
 class TeamType
@@ -26,7 +28,7 @@ class TeamType
 
     /**
      * @return int|null
-     * @Groups({"team"})
+     * @Groups({"type"})
      */
     public function getId(): ?int
     {
@@ -35,7 +37,7 @@ class TeamType
 
     /**
      * @return string|null
-     * @Groups({"team"})
+     * @Groups({"type"})
      */
     public function getName(): ?string
     {

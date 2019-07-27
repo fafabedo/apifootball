@@ -7,7 +7,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *     normalizationContext={"groups"={"type"}, "enable_max_depth"=true}
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\MatchStageRepository")
  */
 class MatchStage
@@ -36,7 +38,7 @@ class MatchStage
 
     /**
      * @return int|null
-     * @Groups({"fixture"})
+     * @Groups({"type"})
      */
     public function getId(): ?int
     {
@@ -45,7 +47,7 @@ class MatchStage
 
     /**
      * @return string|null
-     * @Groups({"fixture"})
+     * @Groups({"type"})
      */
     public function getName(): ?string
     {

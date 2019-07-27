@@ -77,7 +77,6 @@ class CompetitionSeasonTable
 
     /**
      * @return CompetitionSeason|null
-     * @Groups({"table"})
      */
     public function getCompetitionSeason(): ?CompetitionSeason
     {

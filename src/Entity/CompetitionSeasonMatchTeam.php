@@ -8,7 +8,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"fixture"}}
+ *     normalizationContext={"groups"={"season_match"}, "enable_max_depth"=true}
  * )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonMatchTeamRepository")
  */
@@ -70,7 +70,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return int|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getId(): ?int
     {
@@ -98,7 +98,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return Team|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getTeam(): ?Team
     {
@@ -118,7 +118,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return bool|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getIsHome(): ?bool
     {
@@ -138,7 +138,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return int|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getScore(): ?int
     {
@@ -158,7 +158,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return bool|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getIsVictory(): ?bool
     {
@@ -178,7 +178,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return bool|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getIsDraw(): ?bool
     {
@@ -198,7 +198,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return string|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getLabel(): ?string
     {
@@ -218,6 +218,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return CompetitionSeasonMatch|null
+     * @Groups({"season_match"})
      */
     public function getCompetitionSeasonMatchResult(): ?CompetitionSeasonMatch
     {
@@ -237,7 +238,7 @@ class CompetitionSeasonMatchTeam
 
     /**
      * @return string|null
-     * @Groups({"fixture", "season"})
+     * @Groups({"season_match"})
      */
     public function getFormula(): ?string
     {

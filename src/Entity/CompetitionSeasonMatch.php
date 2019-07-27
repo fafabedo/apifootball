@@ -12,10 +12,11 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Knp\DoctrineBehaviors\Model as ORMBehaviors;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\MaxDepth;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"fixture"}}
+ *     normalizationContext={"groups"={"season_match", "team", "type"}, "enable_max_depth"=true}
  * )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonMatchRepository")
  * @ApiFilter(SearchFilter::class, properties={"competition_season.id": "exact"})
@@ -30,7 +31,6 @@ class CompetitionSeasonMatch
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="bigint")
-     * @Groups({"fixture"})
      */
     private $id;
 
@@ -97,6 +97,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return int|null
+     * @Groups({"season_match"})
      */
     public function getId(): ?int
     {
@@ -105,7 +106,6 @@ class CompetitionSeasonMatch
 
     /**
      * @return CompetitionSeason|null
-     * @Groups({"fixture"})
      */
     public function getCompetitionSeason(): ?CompetitionSeason
     {
@@ -125,7 +125,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return \DateTimeInterface|null
-     * @Groups({"fixture", "season"})
+     * @Groups({"season_match"})
      */
     public function getMatchDatetime(): ?\DateTimeInterface
     {
@@ -145,7 +145,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return int|null
-     * @Groups({"fixture", "season"})
+     * @Groups({"season_match"})
      */
     public function getMatchDay(): ?int
     {
@@ -165,7 +165,6 @@ class CompetitionSeasonMatch
 
     /**
      * @return array|null
-     * @Groups({"fixture", "season"})
      */
     public function getMetadata(): ?array
     {
@@ -185,7 +184,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return int|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getAttendance(): ?int
     {
@@ -205,6 +204,8 @@ class CompetitionSeasonMatch
 
     /**
      * @return Collection|CompetitionSeasonMatchTeam[]
+     * @Groups({"season_match"})
+     * @MaxDepth(2)
      */
     public function getCompetitionSeasonMatchTeams(): Collection
     {
@@ -244,7 +245,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return bool|null
-     * @Groups({"fixture", "season"})
+     * @Groups({"season_match"})
      */
     public function getIsProcessed(): ?bool
     {
@@ -264,7 +265,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return bool|null
-     * @Groups({"fixture", "season"})
+     * @Groups({"season_match"})
      */
     public function getIsPlayed(): ?bool
     {
@@ -284,7 +285,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return MatchStage|null
-     * @Groups({"fixture"})
+     * @Groups({"season_match"})
      */
     public function getMatchStage(): ?MatchStage
     {
@@ -304,7 +305,7 @@ class CompetitionSeasonMatch
 
     /**
      * @return string|null
-     * @Groups({"fixture", "season"})
+     * @Groups({"season_match"})
      */
     public function getMatchGroup(): ?string
     {

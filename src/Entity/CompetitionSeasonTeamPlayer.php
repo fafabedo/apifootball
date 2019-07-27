@@ -5,9 +5,12 @@ namespace App\Entity;
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Traits\TimestampableTrait;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ApiResource()
+ * @ApiResource(
+ *     normalizationContext={"groups"={"season_player", "player"}, "enable_max_depth"=true}
+ * )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonTeamPlayerRepository")
  */
 class CompetitionSeasonTeamPlayer
@@ -35,6 +38,7 @@ class CompetitionSeasonTeamPlayer
 
     /**
      * @return int|null
+     * @Groups({"season_player"})
      */
     public function getId(): ?int
     {
@@ -62,6 +66,7 @@ class CompetitionSeasonTeamPlayer
 
     /**
      * @return Player|null
+     * @Groups({"season_player"})
      */
     public function getPlayer(): ?Player
     {
