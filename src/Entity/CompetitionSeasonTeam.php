@@ -25,7 +25,6 @@ class CompetitionSeasonTeam
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="bigint")
-     * @Groups({"read"})
      */
     private $id;
 
@@ -37,7 +36,6 @@ class CompetitionSeasonTeam
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Team", inversedBy="competitionSeasonTeams")
-     * @Groups({"season"})
      */
     private $team;
 
