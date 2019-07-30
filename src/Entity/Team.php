@@ -106,7 +106,7 @@ class Team
 
     /**
      * @return int|null
-     * @Groups({"team"})
+     * @Groups({"team", "ids"})
      */
     public function getId(): ?int
     {
@@ -115,7 +115,7 @@ class Team
 
     /**
      * @return string|null
-     * @Groups({"team"})
+     * @Groups({"team", "ids"})
      */
     public function getName(): ?string
     {

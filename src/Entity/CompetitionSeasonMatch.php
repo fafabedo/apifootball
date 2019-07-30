@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Annotation\MaxDepth;
 
 /**
  * @ApiResource(
- *     normalizationContext={"groups"={"season_match", "team", "type"}, "enable_max_depth"=true}
+ *     normalizationContext={"groups"={"season_match", "ids", "type"}, "enable_max_depth"=true}
  * )
  * @ORM\Entity(repositoryClass="App\Repository\CompetitionSeasonMatchRepository")
  * @ApiFilter(SearchFilter::class, properties={"competition_season.id": "exact"})
@@ -205,7 +205,7 @@ class CompetitionSeasonMatch
     /**
      * @return Collection|CompetitionSeasonMatchTeam[]
      * @Groups({"season_match"})
-     * @MaxDepth(2)
+     * @MaxDepth(1)
      */
     public function getCompetitionSeasonMatchTeams(): Collection
     {
