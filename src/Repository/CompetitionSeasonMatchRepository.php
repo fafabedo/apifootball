@@ -103,18 +103,52 @@ class CompetitionSeasonMatchRepository extends ServiceEntityRepository
         return $this->findBy($filters);
     }
 
-    // /**
-    //  * @return CompetitionSeasonMatch[] Returns an array of CompetitionSeasonMatch objects
-    //  */
-    /*
-    public function findOneBySomeField($value): ?CompetitionSeasonMatch
+    /**
+     * @param bool $featured
+     * @return CompetitionSeasonMatch[]
+     */
+    public function findByFeaturedCompetition($featured = true)
     {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.exampleField = :val')
-            ->setParameter('val', $value)
+        return $this->createQueryBuilder('csm')
+            ->join('csm.competition_season', 'cs')
+            ->join('cs.competition', 'c')
+            ->leftJoin('csm.matchSummary', 'ms')
+            ->where('c.isFeatured = :featured')
+            ->setParameter('featured', $featured)
             ->getQuery()
-            ->getOneOrNullResult()
-        ;
+            ->getResult();
     }
-    */
+
+    /**
+     * @param $competitionId
+     * @param bool $archive
+     * @return mixed
+     */
+    public function findByCompetitionId($competitionId, $archive = false)
+    {
+        return $this->createQueryBuilder('csm')
+            ->join('csm.competition_season', 'cs')
+            ->join('cs.competition', 'c')
+            ->leftJoin('csm.matchSummary', 'ms')
+            ->where('c.id = :competitionId')
+            ->andWhere('cs.archive = :archive')
+            ->setParameter('competitionId', $competitionId)
+            ->setParameter('archive', $archive)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param $competitionMatchId
+     * @return mixed
+     */
+    public function findByCompetitionMatchId($competitionMatchId)
+    {
+        return $this->createQueryBuilder('csm')
+            ->leftJoin('csm.matchSummary', 'ms')
+            ->where('csm.id = :competitionMatchId')
+            ->setParameter('competitionMatchId', $competitionMatchId)
+            ->getQuery()
+            ->getResult();
+    }
 }

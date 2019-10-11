@@ -88,6 +88,11 @@ class CompetitionSeasonMatch
     private $MatchGroup;
 
     /**
+     * @ORM\OneToOne(targetEntity="App\Entity\MatchSummary", mappedBy="competitionSeasonMatch", cascade={"persist", "remove"})
+     */
+    private $matchSummary;
+
+    /**
      * CompetitionSeasonMatch constructor.
      */
     public function __construct()
@@ -319,6 +324,24 @@ class CompetitionSeasonMatch
     public function setMatchGroup(?string $MatchGroup): self
     {
         $this->MatchGroup = $MatchGroup;
+
+        return $this;
+    }
+
+    public function getMatchSummary(): ?MatchSummary
+    {
+        return $this->matchSummary;
+    }
+
+    public function setMatchSummary(?MatchSummary $matchSummary): self
+    {
+        $this->matchSummary = $matchSummary;
+
+        // set (or unset) the owning side of the relation if necessary
+        $newCompetitionSeasonMatch = $matchSummary === null ? null : $this;
+        if ($newCompetitionSeasonMatch !== $matchSummary->getCompetitionSeasonMatch()) {
+            $matchSummary->setCompetitionSeasonMatch($newCompetitionSeasonMatch);
+        }
 
         return $this;
     }

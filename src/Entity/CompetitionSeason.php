@@ -65,13 +65,13 @@ class CompetitionSeason
     private $metadata;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonMatch", mappedBy="competition_season", orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonMatch", mappedBy="competition_season", cascade={"persist", "remove"})
      * @ApiSubresource()
      */
     private $competitionSeasonMatches;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTable", mappedBy="competitionSeason")
+     * @ORM\OneToMany(targetEntity="App\Entity\CompetitionSeasonTable", mappedBy="competitionSeason", cascade={"persist", "remove"})
      * @ApiSubresource()
      */
     private $competitionSeasonTables;

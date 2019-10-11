@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Entity\Competition;
 use App\Entity\ProcessQueue;
 use App\Entity\Team;
+use App\Service\Crawler\Entity\Match\MatchSummaryCrawler;
 use App\Service\Crawler\Entity\Player\PlayerCrawler;
 use App\Service\ProcessQueue\ProcessQueueManager;
 use Doctrine\Common\Persistence\ManagerRegistry;
@@ -16,7 +17,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class FtAppCrwFixConfigCommand extends Command
 {
-    protected static $defaultName = 'ft-app:crw:fix-config';
+    protected static $defaultName = 'ft-app:crw:run';
 
     /**
      * @var ManagerRegistry
@@ -29,6 +30,11 @@ class FtAppCrwFixConfigCommand extends Command
     private $playerCrawler;
 
     /**
+     * @var MatchSummaryCrawler
+     */
+    private $matchSummaryCrawler;
+
+    /**
      * @var ProcessQueueManager
      */
     private $processQueueManager;
@@ -37,15 +43,18 @@ class FtAppCrwFixConfigCommand extends Command
      * ProcessCompetitionCommand constructor.
      * @param ManagerRegistry $doctrine
      * @param PlayerCrawler $playerCrawler
+     * @param MatchSummaryCrawler $matchSummaryCrawler
      * @param ProcessQueueManager $processQueueManager
      */
     public function __construct(
         ManagerRegistry $doctrine,
         PlayerCrawler $playerCrawler,
+        MatchSummaryCrawler $matchSummaryCrawler,
         ProcessQueueManager $processQueueManager
     ) {
         $this->doctrine = $doctrine;
         $this->playerCrawler = $playerCrawler;
+        $this->matchSummaryCrawler = $matchSummaryCrawler;
         $this->processQueueManager = $processQueueManager;
         parent::__construct();
     }
@@ -84,67 +93,46 @@ class FtAppCrwFixConfigCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $competition = $this
-            ->doctrine
-            ->getRepository(Competition::class)
-            ->find(1242);
+        $this->matchSummaryCrawler
+            ->setCompetitionMatchId(2067)
+            ->process()
+            ->saveData();
 
-        $team = $this
-            ->doctrine
-            ->getRepository(Team::class)
-            ->find(5038);
-//        $this
-//            ->getPlayerCrawler()
-//            ->setCompetition($competition)
-////            ->setTeam($team)
-//            ->setOutput($output)
-//            ->process()
-//            ->saveData()
-//            ;
-
+//        $frequency = 60 * 60 * 24; // 1 day
 //        $this
 //            ->getProcessQueueManager()
-//            ->add('App\\Service\\Crawler\\Entity\\Competition\\CompetitionAmericaCrawler', ['team' => 5038])
-//            ->add('App\\Service\\Crawler\\Entity\\Competition\\CompetitionEuropeCrawler', ['team' => 5079])
-//            ->add('App\\Service\\Crawler\\Entity\\Competition\\CompetitionFifaCrawler', ['team' => 5303])
-//            ->add('App\\Service\\Crawler\\Entity\\Competition\\CompetitionNationalCrawler', ['team' => 5309])
-//            ->add('App\\Service\\Crawler\\Entity\\Player\\PlayerCrawler', ['team' => 8960]);
-
-        $frequency = 60 * 60 * 24; // 1 day
-        $this
-            ->getProcessQueueManager()
-            ->add('App\\Service\\Crawler\\CachePageClearCrawler',
-                [],
-                ProcessQueue::TYPE_RECURRING,
-                $frequency * 1,
-                100)
-            ->add('App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonCrawler',
-                ['featured' => true],
-                ProcessQueue::TYPE_RECURRING,
-                $frequency * 30,
-                100)
-            ->add(
-                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonTeamCrawler',
-                ['featured' => true],
-                ProcessQueue::TYPE_RECURRING,
-                $frequency * 30,
-                20
-            )
-            ->add(
-                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonPlayerCrawler',
-                ['featured' => true],
-                ProcessQueue::TYPE_RECURRING,
-                $frequency * 30,
-                20
-            )
-            ->add(
-                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonMatchCrawler',
-                ['featured' => true],
-                ProcessQueue::TYPE_RECURRING,
-                $frequency * 1,
-                20
-            )
-        ;
+//            ->add('App\\Service\\Crawler\\CachePageClearCrawler',
+//                [],
+//                ProcessQueue::TYPE_RECURRING,
+//                $frequency * 1,
+//                100)
+//            ->add('App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonCrawler',
+//                ['featured' => true],
+//                ProcessQueue::TYPE_RECURRING,
+//                $frequency * 30,
+//                100)
+//            ->add(
+//                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonTeamCrawler',
+//                ['featured' => true],
+//                ProcessQueue::TYPE_RECURRING,
+//                $frequency * 30,
+//                20
+//            )
+//            ->add(
+//                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonPlayerCrawler',
+//                ['featured' => true],
+//                ProcessQueue::TYPE_RECURRING,
+//                $frequency * 30,
+//                20
+//            )
+//            ->add(
+//                'App\\Service\\Crawler\\Entity\\CompetitionSeason\\CompetitionSeasonMatchCrawler',
+//                ['featured' => true],
+//                ProcessQueue::TYPE_RECURRING,
+//                $frequency * 1,
+//                20
+//            )
+//        ;
 
         $io->success('All tasks have been completed');
     }

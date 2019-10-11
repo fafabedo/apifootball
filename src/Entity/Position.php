@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -24,6 +26,21 @@ class Position
      * @ORM\Column(type="string", length=100)
      */
     private $name;
+
+    /**
+     * @ORM\Column(type="string", length=20, nullable=true)
+     */
+    private $shortName;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\PositionMap", mappedBy="position", cascade={"persist", "remove"})
+     */
+    private $positionMap;
+
+
+    public function __construct()
+    {
+    }
 
     /**
      * @return int|null
@@ -51,4 +68,34 @@ class Position
 
         return $this;
     }
+
+    public function getShortName(): ?string
+    {
+        return $this->shortName;
+    }
+
+    public function setShortName(?string $shortName): self
+    {
+        $this->shortName = $shortName;
+
+        return $this;
+    }
+
+    public function getPositionMap(): ?PositionMap
+    {
+        return $this->positionMap;
+    }
+
+    public function setPositionMap(PositionMap $positionMap): self
+    {
+        $this->positionMap = $positionMap;
+
+        // set the owning side of the relation if necessary
+        if ($this !== $positionMap->getPosition()) {
+            $positionMap->setPosition($this);
+        }
+
+        return $this;
+    }
+
 }
